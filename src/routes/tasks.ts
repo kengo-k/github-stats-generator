@@ -13,6 +13,10 @@ const chartJSNodeCanvas = new ChartJSNodeCanvas({
   backgroundColour,
 });
 
+chartJSNodeCanvas.registerFont("./src/fonts/OxygenMono-Regular.otf", {
+  family: "Serif",
+});
+
 const createImage = async () => {
   const image = chartJSNodeCanvas.renderToBuffer({
     type: "line",
