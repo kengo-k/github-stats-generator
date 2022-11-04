@@ -1,79 +1,40 @@
-import { Response, Request, Router } from 'express';
-import { HttpStatus } from '../models/http-status';
-import { Task } from '../models/task';
+import { Response, Request, Router } from "express";
+import { Task } from "../models/task";
+import { ChartJSNodeCanvas } from "chartjs-node-canvas";
 
 const router = Router({ mergeParams: true });
 
-const tasks: Task[] = [];
-
-router.get('/', (req: Request, res: Response) => {
-
-    res.send(tasks);
+const width = 400; //px
+const height = 400; //px
+const backgroundColour = "white";
+const chartJSNodeCanvas = new ChartJSNodeCanvas({
+  width,
+  height,
+  backgroundColour,
 });
 
-router.post('/', (req: Request, res: Response) => {
+const createImage = async () => {
+  const image = chartJSNodeCanvas.renderToBuffer({
+    type: "line",
+    data: {
+      datasets: [
+        {
+          data: [0, 5, 200, 50, 20],
+        },
+        {
+          data: [0, 1, 30, 2600, 300],
+        },
+      ],
+    },
+  });
 
-    const { name, desc } = req.body;
+  return image;
+};
 
-    if (name && desc) {
-
-        const id = tasks.length === 0 ? 1 : tasks[tasks.length - 1].id + 1;
-
-        const task = { id, name, desc };
-        tasks.push(task);
-
-        res.status(HttpStatus.Created).send(task);
-        return;
-    }
-
-    res.sendStatus(HttpStatus.BadRequest);
-});
-
-router.put('/:taskId', (req: Request, res: Response) => {
-
-    const { taskId } = req.params;
-    const { name, desc } = req.body;
-
-    if (name && desc) {
-        const id = parseInt(taskId);
-        const task = tasks.find(task => task.id === id);
-        if (task) {
-            const index = tasks.findIndex(task => task.id === id);
-            tasks.splice(index, 1);
-            const newTask = { id, name, desc };
-            tasks.push(newTask);
-
-            res.status(HttpStatus.OK).send(newTask);
-            return;
-        }
-
-        res.sendStatus(HttpStatus.NotFound);
-        return;
-    }
-
-    res.sendStatus(400);
-});
-
-router.delete('/:taskId', (req: Request, res: Response) => {
-
-    const { taskId } = req.params;
-
-    if (taskId) {
-        const id = parseInt(taskId);
-        const task = tasks.find(task => task.id === id);
-        if (task) {
-            const index = tasks.findIndex(task => task.id === id);
-            tasks.splice(index, 1);
-
-            res.sendStatus(HttpStatus.OK);
-            return;
-        }
-
-        res.sendStatus(HttpStatus.NotFound);
-        return;
-    }
-
-    res.sendStatus(HttpStatus.BadRequest);
+router.get("/", async (req: Request, res: Response) => {
+  const image = await createImage();
+  console.log("image: " + image);
+  res.send(image);
 });
 
 export default router;
