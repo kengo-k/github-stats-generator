@@ -1,6 +1,6 @@
 import { callGraphQL } from "../services/github";
 
-export const ActiveProjectsQuery = `
+export const UserRepositoriesQuery = `
   query user($login: String!) {
     user(login: $login) {
       repositories(
@@ -18,12 +18,12 @@ export const ActiveProjectsQuery = `
   }
 `;
 
-export interface ActiveProjectsQueryVariableType {
+export interface UserRepositoriesQueryVariableType {
   login: string;
 }
 
-export const callActiveProjectsQuery = (
-  variables: ActiveProjectsQueryVariableType
+export const callUserRepositoriesQuery = (
+  variables: UserRepositoriesQueryVariableType
 ) => {
-  return callGraphQL<typeof variables>(ActiveProjectsQuery, variables);
+  return callGraphQL<typeof variables>(UserRepositoriesQuery, variables);
 };
