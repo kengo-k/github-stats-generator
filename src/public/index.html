@@ -1,6 +1,28 @@
 <html>
+  <head>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.2.41"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.36.1"></script>
+  </head>
   <body>
-    <h1>Hello, Express!</h1>
-    <img src="/images" />
+    <div id="app">
+      <ul v-for="item in items" v-bind:key="item.name">
+        <li>{{ item.name }}は{{ item.color }}です。</li>
+      </ul>
+    </div>
   </body>
+  <script>
+    const app = Vue.createApp({
+      el: "#app",
+      data() {
+        return {
+          items: [
+            { name: "りんご", color: "赤色" },
+            { name: "バナナ", color: "黄色" },
+            { name: "すいか", color: "赤色" },
+          ],
+        };
+      },
+    });
+    app.mount("#app");
+  </script>
 </html>
