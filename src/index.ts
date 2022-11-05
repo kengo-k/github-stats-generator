@@ -10,4 +10,4 @@ app.use("/public", express.static(__dirname + "/public"));
 app.use(json());
 app.use(routes);
 
-app.listen(config.port, () => console.log(`Listening on port: ${config.port}`));
+app.listen(config.PORT, () => console.log(`Listening on port: ${config.PORT}`));
