@@ -6,17 +6,31 @@ import { callUserRepositoriesQuery } from "../graphql/user_repositories";
 const router = Router({ mergeParams: true });
 
 router.get("/active_projects", async (req: Request, res: Response) => {
+  // リポジトリの一覧を取得
   const projects = await callUserRepositoriesQuery({ login: config.OWNER });
-  // 指定期間内にPUSHされたリポジトリの一覧のみを抽出
-  const recentProjectIDs = projects.data.data.user.repositories.nodes
+  // TODO 直近でPUSHされたものだけを抽出
+  const repoIDs = projects.data.data.user.repositories.nodes
     .filter((p: any) => {
       return p;
     })
     .map((p: any) => {
       return p.id;
     });
-  const x = await callNodesQuery({ ids: recentProjectIDs });
-  res.send(x.data);
+  const recentRepos = await callNodesQuery({ ids: repoIDs });
+  const ret = recentRepos.data.data.nodes
+    .filter((r: any) => {
+      if (r.defaultBranchRef != null) {
+        const totalCount = r.defaultBranchRef.target.history.totalCount;
+        return totalCount > 0;
+      }
+    })
+    .map((r: any) => {
+      return {
+        name: r.name,
+        commit_count: r.defaultBranchRef.target.history.totalCount,
+      };
+    });
+  res.send(ret);
 });
 
 export default router;
