@@ -13,8 +13,17 @@
   </body>
   <script>
     const initChart = (data) => {
+      const repos = data.repos;
+
+      const extract = (key) => {
+        return repos.map((r) => {
+          return r[key];
+        });
+      };
+      const series = extract("commit_count");
+      const labels = extract("name");
       var options = {
-        series: [44, 55, 41, 17, 15],
+        series,
         chart: {
           width: 600,
           type: "donut",
@@ -43,7 +52,7 @@
             },
           },
         },
-        labels: ["Comedy", "Action", "SciFi", "Drama", "Horror"],
+        labels,
         dataLabels: {
           dropShadow: {
             blur: 3,
@@ -73,7 +82,7 @@
           palette: "palette2",
         },
         title: {
-          text: "Favourite Movie Type",
+          text: "Active Projects in this week(commit count)",
         },
         responsive: [
           {
