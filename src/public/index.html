@@ -4,11 +4,7 @@
     <script src="https://cdn.jsdelivr.net/npm/apexcharts@2"></script>
   </head>
   <body>
-    <div id="app">
-      <ul v-for="item in items" v-bind:key="item.name">
-        <li>{{ item.name }}は{{ item.color }}です。</li>
-      </ul>
-    </div>
+    <div id="app"></div>
     <div id="chart"></div>
   </body>
   <script>
@@ -106,13 +102,7 @@
     const app = Vue.createApp({
       el: "#app",
       data() {
-        return {
-          items: [
-            { name: "りんご", color: "赤色" },
-            { name: "バナナ", color: "黄色" },
-            { name: "すいか", color: "赤色" },
-          ],
-        };
+        return {};
       },
       mounted() {
         fetch("/api/active_projects")
