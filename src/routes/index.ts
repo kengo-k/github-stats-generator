@@ -1,7 +1,7 @@
 import { Router } from "express";
-import tasks from "./tasks";
+import apis from "./apis";
 
 const router = Router({ mergeParams: true });
-router.use("/api", tasks);
+router.use("/api", apis);
 
 export default router;
