@@ -38,6 +38,9 @@ router.get("/active_projects", async (req: Request, res: Response) => {
       return {
         name: r.name,
         commit_count: r.defaultBranchRef.target.history.totalCount,
+        langs: r.languages.edges.flatMap((e: any) => {
+          return [e.node.name];
+        }),
       };
     });
   let total_commit_count = 0;

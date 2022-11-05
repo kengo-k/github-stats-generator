@@ -14,6 +14,14 @@ export const NodesQuery = (since: string) => `
             }
           }
         }
+        languages(first: 100, orderBy: {field: SIZE, direction: DESC}) {
+          edges {
+            node {
+              name
+              color
+            }
+          }
+        }
       }
     }
   }
