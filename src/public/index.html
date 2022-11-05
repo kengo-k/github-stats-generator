@@ -1,7 +1,7 @@
 <html>
   <head>
     <script src="https://cdn.jsdelivr.net/npm/vue@3.2.41"></script>
-    <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.36.1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@2"></script>
   </head>
   <body>
     <div id="app">
@@ -12,6 +12,88 @@
     <div id="chart"></div>
   </body>
   <script>
+    const initChart = (data) => {
+      var options = {
+        series: [44, 55, 41, 17, 15],
+        chart: {
+          width: 600,
+          type: "donut",
+          dropShadow: {
+            enabled: true,
+            color: "#111",
+            top: -1,
+            left: 3,
+            blur: 3,
+            opacity: 0.2,
+          },
+        },
+        stroke: {
+          width: 0,
+        },
+        plotOptions: {
+          pie: {
+            donut: {
+              labels: {
+                show: true,
+                total: {
+                  showAlways: true,
+                  show: true,
+                },
+              },
+            },
+          },
+        },
+        labels: ["Comedy", "Action", "SciFi", "Drama", "Horror"],
+        dataLabels: {
+          dropShadow: {
+            blur: 3,
+            opacity: 0.8,
+          },
+        },
+        fill: {
+          type: "pattern",
+          opacity: 1,
+          pattern: {
+            enabled: true,
+            style: [
+              "verticalLines",
+              "squares",
+              "horizontalLines",
+              "circles",
+              "slantedLines",
+            ],
+          },
+        },
+        states: {
+          hover: {
+            filter: "none",
+          },
+        },
+        theme: {
+          palette: "palette2",
+        },
+        title: {
+          text: "Favourite Movie Type",
+        },
+        responsive: [
+          {
+            breakpoint: 480,
+            options: {
+              chart: {
+                width: 200,
+              },
+              legend: {
+                position: "bottom",
+              },
+            },
+          },
+        ],
+      };
+
+      var chart = new ApexCharts(document.querySelector("#chart"), options);
+      chart.render();
+    };
+
     const app = Vue.createApp({
       el: "#app",
       data() {
@@ -23,26 +105,12 @@
           ],
         };
       },
+      mounted() {
+        fetch("/api/active_projects")
+          .then((response) => response.json())
+          .then((data) => initChart(data));
+      },
     });
     app.mount("#app");
-
-    // render using apexchart
-    var options = {
-      chart: {
-        type: "line",
-      },
-      series: [
-        {
-          name: "sales",
-          data: [30, 40, 35, 50, 49, 60, 70, 91, 125],
-        },
-      ],
-      xaxis: {
-        categories: [1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999],
-      },
-    };
-
-    var chart = new ApexCharts(document.querySelector("#chart"), options);
-    chart.render();
   </script>
 </html>
