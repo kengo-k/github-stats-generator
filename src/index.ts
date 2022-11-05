@@ -6,7 +6,7 @@ import routes from "./routes";
 const app = express();
 
 app.use(urlencoded({ extended: true }));
-app.use("/public", express.static(__dirname + "/public"));
+app.use("/", express.static(__dirname + "/public"));
 app.use(json());
 app.use(routes);
 
