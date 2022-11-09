@@ -2,15 +2,15 @@ import { Response, Request, Router } from "express";
 import config from "../config";
 import { callNodesQuery } from "../graphql/nodes";
 import { callUserRepositoriesQuery } from "../graphql/user_repositories";
-import { startOfWeek } from "date-fns";
+import { startOfWeek, format } from "date-fns";
 
 const router = Router({ mergeParams: true });
 
 const getStartOfWeek = (): string => {
   const date = startOfWeek(new Date());
-  const [y, m, d] = [date.getFullYear(), date.getMonth() + 1, date.getDate()];
-  const timeZone = "T00:00:00.00+09:00";
-  return `${y}-${m}-${d}${timeZone}`;
+  const ymd = format(date, "yyyy-MM-dd");
+  const timeZone = "T00:00:00+09:00";
+  return `${ymd}${timeZone}`;
 };
 
 router.get("/active_projects", async (req: Request, res: Response) => {
@@ -26,6 +26,7 @@ router.get("/active_projects", async (req: Request, res: Response) => {
     .map((p: any) => {
       return p.id;
     });
+
   const recentRepos = await callNodesQuery(since, { ids: repoIDs });
   const ret = recentRepos.data.data.nodes
     .filter((r: any) => {
