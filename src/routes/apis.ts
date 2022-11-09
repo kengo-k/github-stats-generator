@@ -3,6 +3,7 @@ import config from "../config";
 import { callNodesQuery } from "../graphql/nodes";
 import { callUserRepositoriesQuery } from "../graphql/user_repositories";
 import { startOfWeek, format } from "date-fns";
+import { callLangsQuery } from "../graphql/langs";
 
 const router = Router({ mergeParams: true });
 
@@ -12,6 +13,12 @@ const getStartOfWeek = (): string => {
   const timeZone = "T00:00:00+09:00";
   return `${ymd}${timeZone}`;
 };
+
+router.get("/langs", async (req: Request, res: Response) => {
+  const langs = await callLangsQuery({ login: config.OWNER });
+  const nodes = langs.data.data.user.repositories.nodes;
+  res.send(nodes);
+});
 
 router.get("/active_projects", async (req: Request, res: Response) => {
   const since = getStartOfWeek();
