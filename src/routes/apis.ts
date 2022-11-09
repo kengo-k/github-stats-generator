@@ -18,16 +18,22 @@ router.get("/langs", async (req: Request, res: Response) => {
   const langs = await callLangsQuery({ login: config.OWNER });
   const nodes = langs.data.data.user.repositories.nodes;
   const langMap: {
-    [key: string]: { size: number };
+    [key: string]: {
+      size: number;
+      details: {
+        [key: string]: number;
+      };
+    };
   } = {};
   const ret = nodes.map((n: any) => {
     const edges = n.languages.edges;
     edges.forEach((e: any) => {
       const langName: string = e.node.name;
       if (!langMap[langName]) {
-        langMap[langName] = { size: 0 };
+        langMap[langName] = { size: 0, details: {} };
       }
       langMap[langName]["size"] += e.size;
+      langMap[langName]["details"][n.name] = e.size;
     });
     return { name: n.name, langs: langMap };
   });
