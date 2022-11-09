@@ -17,22 +17,21 @@ const getStartOfWeek = (): string => {
 router.get("/langs", async (req: Request, res: Response) => {
   const langs = await callLangsQuery({ login: config.OWNER });
   const nodes = langs.data.data.user.repositories.nodes;
+  const langMap: {
+    [key: string]: { size: number };
+  } = {};
   const ret = nodes.map((n: any) => {
     const edges = n.languages.edges;
-    const langMap: {
-      [key: string]: { name: string; color: string; size: number };
-    } = {};
     edges.forEach((e: any) => {
       const langName: string = e.node.name;
-      langMap[langName] = {
-        name: langName,
-        color: e.node.color,
-        size: e.size,
-      };
+      if (!langMap[langName]) {
+        langMap[langName] = { size: 0 };
+      }
+      langMap[langName]["size"] += e.size;
     });
     return { name: n.name, langs: langMap };
   });
-  res.send(ret);
+  res.send(langMap);
 });
 
 router.get("/active_projects", async (req: Request, res: Response) => {
