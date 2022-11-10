@@ -20,22 +20,29 @@ router.get("/langs", async (req: Request, res: Response) => {
   const langMap: {
     [key: string]: {
       size: number;
+      ratio?: number;
       details: {
         [key: string]: number;
       };
     };
   } = {};
-  const ret = nodes.map((n: any) => {
+  let totalSize = 0;
+  nodes.forEach((n: any) => {
     const edges = n.languages.edges;
     edges.forEach((e: any) => {
       const langName: string = e.node.name;
       if (!langMap[langName]) {
         langMap[langName] = { size: 0, details: {} };
       }
+      totalSize += e.size;
       langMap[langName]["size"] += e.size;
       langMap[langName]["details"][n.name] = e.size;
     });
     return { name: n.name, langs: langMap };
+  });
+  Object.keys(langMap).forEach((k) => {
+    const lang = langMap[k];
+    lang["ratio"] = (lang["size"] / totalSize) * 100;
   });
   res.send(langMap);
 });
