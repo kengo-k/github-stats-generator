@@ -15,6 +15,10 @@ const getStartOfWeek = (): string => {
 };
 
 router.get("/langs", async (req: Request, res: Response) => {
+  const IGNORES = ["Dockerfile", "Makefile", "Nix", "Vim Script"];
+  const MAPPING: { [key: string]: string } = {
+    SCSS: "CSS",
+  };
   const langs = await callLangsQuery({ login: config.OWNER });
   const nodes = langs.data.data.user.repositories.nodes;
   const langMap: {
@@ -30,7 +34,13 @@ router.get("/langs", async (req: Request, res: Response) => {
   nodes.forEach((n: any) => {
     const edges = n.languages.edges;
     edges.forEach((e: any) => {
-      const langName: string = e.node.name;
+      let langName: string = e.node.name;
+      if (IGNORES.includes(langName)) {
+        return;
+      }
+      if (langName in MAPPING) {
+        langName = MAPPING[langName];
+      }
       if (!langMap[langName]) {
         langMap[langName] = { size: 0, details: {} };
       }
