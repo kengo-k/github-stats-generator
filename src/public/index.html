@@ -5,10 +5,100 @@
   </head>
   <body>
     <div id="app"></div>
-    <div id="chart"></div>
+    <div id="active_projects_chart"></div>
+    <div id="used_languages_chart"></div>
   </body>
   <script>
-    const initChart = (data) => {
+    const initUsedLanguagesChart = (data) => {
+      const labels = Object.keys(data);
+      const series = labels.map((key) => {
+        return data[key].size;
+      });
+      var options = {
+        series,
+        chart: {
+          width: 600,
+          type: "donut",
+          dropShadow: {
+            enabled: true,
+            color: "#111",
+            top: -1,
+            left: 3,
+            blur: 3,
+            opacity: 0.2,
+          },
+        },
+        stroke: {
+          width: 0,
+        },
+        plotOptions: {
+          pie: {
+            donut: {
+              labels: {
+                show: true,
+                total: {
+                  showAlways: true,
+                  show: true,
+                },
+              },
+            },
+          },
+        },
+        labels,
+        dataLabels: {
+          dropShadow: {
+            blur: 3,
+            opacity: 0.8,
+          },
+        },
+        fill: {
+          type: "pattern",
+          opacity: 1,
+          pattern: {
+            enabled: true,
+            style: [
+              "verticalLines",
+              "squares",
+              "horizontalLines",
+              "circles",
+              "slantedLines",
+            ],
+          },
+        },
+        states: {
+          hover: {
+            filter: "none",
+          },
+        },
+        theme: {
+          palette: "palette2",
+        },
+        title: {
+          text: "Active Projects in this week(commit count)",
+        },
+        responsive: [
+          {
+            breakpoint: 480,
+            options: {
+              chart: {
+                width: 200,
+              },
+              legend: {
+                position: "bottom",
+              },
+            },
+          },
+        ],
+      };
+
+      var chart = new ApexCharts(
+        document.querySelector("#used_languages_chart"),
+        options
+      );
+      chart.render();
+    };
+
+    const initActiveProjectsChart = (data) => {
       const repos = data.repos;
 
       const extract = (key) => {
@@ -95,7 +185,10 @@
         ],
       };
 
-      var chart = new ApexCharts(document.querySelector("#chart"), options);
+      var chart = new ApexCharts(
+        document.querySelector("#active_projects_chart"),
+        options
+      );
       chart.render();
     };
 
@@ -107,7 +200,10 @@
       mounted() {
         fetch("/api/active_projects")
           .then((response) => response.json())
-          .then((data) => initChart(data));
+          .then((data) => initActiveProjectsChart(data));
+        fetch("/api/langs")
+          .then((response) => response.json())
+          .then((data) => initUsedLanguagesChart(data));
       },
     });
     app.mount("#app");
