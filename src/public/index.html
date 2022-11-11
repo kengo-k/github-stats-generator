@@ -2,6 +2,7 @@
   <head>
     <script src="https://cdn.jsdelivr.net/npm/vue@3.2.41"></script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts@2"></script>
+    <script src="https://code.highcharts.com/10.3/highcharts.js"></script>
   </head>
   <body>
     <div id="app"></div>
@@ -10,92 +11,47 @@
   </body>
   <script>
     const initUsedLanguagesChart = (data) => {
-      const labels = Object.keys(data);
-      const series = labels.map((key) => {
-        return data[key].size;
+      const keys = Object.keys(data);
+      const seriesData = keys.map((key) => {
+        return { name: key, y: data[key].size };
       });
-      var options = {
-        series,
+      console.log(seriesData);
+      Highcharts.chart("used_languages_chart", {
         chart: {
-          width: 600,
-          type: "donut",
-          dropShadow: {
-            enabled: true,
-            color: "#111",
-            top: -1,
-            left: 3,
-            blur: 3,
-            opacity: 0.2,
-          },
+          plotBackgroundColor: null,
+          plotBorderWidth: null,
+          plotShadow: false,
+          type: "pie",
         },
-        stroke: {
-          width: 0,
+        title: {
+          text: "Browser market shares in May, 2020",
+        },
+        tooltip: {
+          pointFormat: "{series.name}: <b>{point.percentage:.1f}%</b>",
+        },
+        accessibility: {
+          point: {
+            valueSuffix: "%",
+          },
         },
         plotOptions: {
           pie: {
-            donut: {
-              labels: {
-                show: true,
-                total: {
-                  showAlways: true,
-                  show: true,
-                },
-              },
+            allowPointSelect: true,
+            cursor: "pointer",
+            dataLabels: {
+              enabled: true,
+              format: "<b>{point.name}</b>: {point.percentage:.1f} %",
             },
           },
         },
-        labels,
-        dataLabels: {
-          dropShadow: {
-            blur: 3,
-            opacity: 0.8,
-          },
-        },
-        fill: {
-          type: "pattern",
-          opacity: 1,
-          pattern: {
-            enabled: true,
-            style: [
-              "verticalLines",
-              "squares",
-              "horizontalLines",
-              "circles",
-              "slantedLines",
-            ],
-          },
-        },
-        states: {
-          hover: {
-            filter: "none",
-          },
-        },
-        theme: {
-          palette: "palette2",
-        },
-        title: {
-          text: "Active Projects in this week(commit count)",
-        },
-        responsive: [
+        series: [
           {
-            breakpoint: 480,
-            options: {
-              chart: {
-                width: 200,
-              },
-              legend: {
-                position: "bottom",
-              },
-            },
+            name: "Brands",
+            colorByPoint: true,
+            data: seriesData,
           },
         ],
-      };
-
-      var chart = new ApexCharts(
-        document.querySelector("#used_languages_chart"),
-        options
-      );
-      chart.render();
+      });
     };
 
     const initActiveProjectsChart = (data) => {
