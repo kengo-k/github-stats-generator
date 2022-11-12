@@ -33,7 +33,7 @@ router.get("/langs", async (req: Request, res: Response) => {
   const langMap: {
     [key: string]: {
       size: number;
-      ratio?: number;
+      color?: string;
       details: {
         [key: string]: number;
       };
@@ -56,12 +56,9 @@ router.get("/langs", async (req: Request, res: Response) => {
       totalSize += e.size;
       langMap[langName]["size"] += e.size;
       langMap[langName]["details"][n.name] = e.size;
+      langMap[langName]["color"] = e.node.color;
     });
     return { name: n.name, langs: langMap };
-  });
-  Object.keys(langMap).forEach((k) => {
-    const lang = langMap[k];
-    lang["ratio"] = (lang["size"] / totalSize) * 100;
   });
   res.send(langMap);
 });

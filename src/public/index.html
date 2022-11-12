@@ -12,10 +12,20 @@
   <script>
     const initUsedLanguagesChart = (data) => {
       const keys = Object.keys(data);
-      const seriesData = keys.map((key) => {
-        return { name: key, y: data[key].size };
-      });
-      console.log(seriesData);
+      const seriesData = keys
+        .map((key) => {
+          return { name: key, y: data[key].size, color: data[key].color };
+        })
+        .sort((a, b) => {
+          if (a.y > b.y) {
+            return -1;
+          } else if (a.y === b.y) {
+            return 0;
+          } else {
+            return 1;
+          }
+        });
+      console.log(data);
       Highcharts.chart("used_languages_chart", {
         chart: {
           plotBackgroundColor: null,
