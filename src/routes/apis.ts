@@ -13,8 +13,9 @@ import { callLangsQuery } from "../graphql/langs";
 
 const router = Router({ mergeParams: true });
 
-const getDateRange = (): [string, string] => {
-  const sinceDate = startOfMonth(new Date());
+const getDateRange = (prevMonth: number): [string, string] => {
+  const date = startOfMonth(new Date());
+  const sinceDate = startOfMonth(addMonths(date, prevMonth));
   const untilDate = addDays(addMonths(sinceDate, 1), -1);
   const tos = (d: Date, isEnd: boolean) => {
     const ymd = format(d, "yyyy-MM-dd");
@@ -71,41 +72,46 @@ router.get("/langs", async (req: Request, res: Response) => {
 });
 
 router.get("/active_projects", async (req: Request, res: Response) => {
-  const [since, until] = getDateRange();
+  const [since_0, until_0] = getDateRange(0);
+  const [since_1, until_1] = getDateRange(-1);
+  const [since_2, until_2] = getDateRange(-2);
 
-  // リポジトリの一覧を取得
-  const projects = await callUserRepositoriesQuery({ login: config.OWNER });
-  // TODO 直近でPUSHされたものだけを抽出
-  const repoIDs = projects.data.data.user.repositories.nodes
-    .filter((p: any) => {
-      return p;
-    })
-    .map((p: any) => {
-      return p.id;
-    });
+  const call = async (since: string, until: string) => {
+    // リポジトリの一覧を取得
+    const projects = await callUserRepositoriesQuery({ login: config.OWNER });
+    // TODO 直近でPUSHされたものだけを抽出
+    const repoIDs = projects.data.data.user.repositories.nodes
+      .filter((p: any) => {
+        return p;
+      })
+      .map((p: any) => {
+        return p.id;
+      });
 
-  const recentRepos = await callNodesQuery(since, until, { ids: repoIDs });
-  const ret = recentRepos.data.data.nodes
-    .filter((r: any) => {
-      if (r.defaultBranchRef != null) {
-        const totalCount = r.defaultBranchRef.target.history.totalCount;
-        return totalCount > 0;
-      }
-    })
-    .map((r: any) => {
-      return {
-        name: r.name,
-        commit_count: r.defaultBranchRef.target.history.totalCount,
-        langs: r.languages.edges.flatMap((e: any) => {
-          return [e.node.name];
-        }),
-      };
+    const recentRepos = await callNodesQuery(since, until, { ids: repoIDs });
+    const ret = recentRepos.data.data.nodes
+      .filter((r: any) => {
+        if (r.defaultBranchRef != null) {
+          const totalCount = r.defaultBranchRef.target.history.totalCount;
+          return totalCount > 0;
+        }
+      })
+      .map((r: any) => {
+        return {
+          name: r.name,
+          commit_count: r.defaultBranchRef.target.history.totalCount,
+        };
+      });
+    let total_commit_count = 0;
+    ret.forEach((r: any) => {
+      total_commit_count += r.commit_count;
     });
-  let total_commit_count = 0;
-  ret.forEach((r: any) => {
-    total_commit_count += r.commit_count;
-  });
-  res.send(Object.assign({}, { since, until, total_commit_count, repos: ret }));
+    return { since, until, total_commit_count, repos: ret };
+  };
+  const res0 = await call(since_0, until_0);
+  const res1 = await call(since_1, until_1);
+  const res2 = await call(since_2, until_2);
+  res.send([res2, res1, res0]);
 });
 
 export default router;

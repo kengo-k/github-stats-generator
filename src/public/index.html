@@ -3,11 +3,13 @@
     <script src="https://cdn.jsdelivr.net/npm/vue@3.2.41"></script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts@2"></script>
     <script src="https://code.highcharts.com/10.3/highcharts.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
   </head>
   <body>
-    <div id="app"></div>
-    <div id="active_projects_chart"></div>
-    <div id="used_languages_chart"></div>
+    <div id="app" class="grid grid-cols-2 h-full">
+      <div id="active_projects_chart" class="h-full"></div>
+      <div id="used_languages_chart"></div>
+    </div>
   </body>
   <script>
     const initUsedLanguagesChart = (chartData) => {
@@ -31,7 +33,6 @@
             return 1;
           }
         });
-      console.log(langMap);
       Highcharts.chart("used_languages_chart", {
         chart: {
           plotBackgroundColor: null,
@@ -71,97 +72,81 @@
     };
 
     const initActiveProjectsChart = (data) => {
-      const repos = data.repos;
+      const repoMap = {};
+      const dataMap = { keys: [], repos: repoMap };
+      data.forEach((item) => {
+        const since = item.since.substring(0, 7);
+        if (!dataMap.keys.includes(since)) {
+          dataMap.keys.push(since);
+        }
+        const repos = item.repos;
+        for (const repo of repos) {
+          const name = repo.name;
+          if (!(name in repoMap)) {
+            repoMap[name] = { name };
+          }
+          if (name in repoMap) {
+            const data = repoMap[name];
+            data[since] = repo.commit_count;
+          }
+        }
+      });
+      const repos = dataMap.repos;
+      const series = Object.keys(repos).map((repoName) => {
+        const repo = repos[repoName];
+        const data = [];
+        for (const key of dataMap.keys) {
+          if (key in repo) {
+            data.push(repo[key]);
+          } else {
+            data.push(0);
+          }
+        }
+        return {
+          name: repo.name,
+          data,
+        };
+      });
 
-      const extract = (key) => {
-        return repos.map((r) => {
-          return r[key];
-        });
-      };
-      const series = extract("commit_count");
-      const labels = extract("name");
-      var options = {
-        series,
+      Highcharts.chart("active_projects_chart", {
         chart: {
-          width: 600,
-          type: "donut",
-          dropShadow: {
-            enabled: true,
-            color: "#111",
-            top: -1,
-            left: 3,
-            blur: 3,
-            opacity: 0.2,
-          },
+          type: "column",
         },
-        stroke: {
-          width: 0,
-        },
-        plotOptions: {
-          pie: {
-            donut: {
-              labels: {
-                show: true,
-                total: {
-                  showAlways: true,
-                  show: true,
-                },
-              },
-            },
-          },
-        },
-        labels,
-        dataLabels: {
-          dropShadow: {
-            blur: 3,
-            opacity: 0.8,
-          },
-        },
-        fill: {
-          type: "pattern",
-          opacity: 1,
-          pattern: {
-            enabled: true,
-            style: [
-              "verticalLines",
-              "squares",
-              "horizontalLines",
-              "circles",
-              "slantedLines",
-            ],
-          },
-        },
-        states: {
-          hover: {
-            filter: "none",
-          },
-        },
-        theme: {
-          palette: "palette2",
+        legend: {
+          enabled: false,
         },
         title: {
-          text: "Active Projects in this week(commit count)",
+          text: "Commits by project in the last 3 months",
         },
-        responsive: [
-          {
-            breakpoint: 480,
-            options: {
-              chart: {
-                width: 200,
-              },
-              legend: {
-                position: "bottom",
-              },
-            },
-          },
-        ],
-      };
 
-      var chart = new ApexCharts(
-        document.querySelector("#active_projects_chart"),
-        options
-      );
-      chart.render();
+        xAxis: {
+          categories: dataMap.keys,
+        },
+
+        yAxis: {
+          allowDecimals: false,
+          min: 0,
+          title: {
+            text: "Commit",
+          },
+        },
+
+        tooltip: {
+          formatter: function () {
+            return (
+              "<b>" + this.x + "</b><br/>" + this.series.name + ": " + this.y
+            );
+          },
+        },
+
+        plotOptions: {
+          column: {
+            stacking: "normal",
+          },
+        },
+
+        series,
+      });
     };
 
     const app = Vue.createApp({
