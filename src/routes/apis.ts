@@ -15,18 +15,12 @@ const getStartOfWeek = (): string => {
 };
 
 router.get("/langs", async (req: Request, res: Response) => {
-  const IGNORES = [
-    "Dockerfile",
-    "Makefile",
-    "Nix",
-    "Vim Script",
-    "HTML",
-    "CSS",
-    "SCSS",
-  ];
+  const IGNORES = ["Dockerfile", "Makefile", "Nix", "Vim Script", "HTML"];
   const MAPPING: { [key: string]: string } = {
     MQL4: "MQL",
     MQL5: "MQL",
+    CSS: "CSS/SCSS",
+    SCSS: "CSS/SCSS",
   };
   const langs = await callLangsQuery({ login: config.OWNER });
   const nodes = langs.data.data.user.repositories.nodes;
@@ -60,7 +54,7 @@ router.get("/langs", async (req: Request, res: Response) => {
     });
     return { name: n.name, langs: langMap };
   });
-  res.send(langMap);
+  res.send({ totalSize, languages: langMap });
 });
 
 router.get("/active_projects", async (req: Request, res: Response) => {

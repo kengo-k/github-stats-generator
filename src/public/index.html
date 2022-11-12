@@ -10,11 +10,17 @@
     <div id="used_languages_chart"></div>
   </body>
   <script>
-    const initUsedLanguagesChart = (data) => {
-      const keys = Object.keys(data);
+    const initUsedLanguagesChart = (chartData) => {
+      const totalSize = chartData.totalSize;
+      const langMap = chartData.languages;
+      const keys = Object.keys(langMap);
       const seriesData = keys
         .map((key) => {
-          return { name: key, y: data[key].size, color: data[key].color };
+          return {
+            name: key,
+            y: langMap[key].size,
+            color: langMap[key].color,
+          };
         })
         .sort((a, b) => {
           if (a.y > b.y) {
@@ -25,7 +31,7 @@
             return 1;
           }
         });
-      console.log(data);
+      console.log(langMap);
       Highcharts.chart("used_languages_chart", {
         chart: {
           plotBackgroundColor: null,
