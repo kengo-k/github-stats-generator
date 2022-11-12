@@ -1,0 +1,8 @@
+{
+  "projectName": "github-summary",
+  "packageManager": "yarn",
+  "meta": {
+    "starter": "node-free-express",
+    "type": "backend"
+  }
+}
