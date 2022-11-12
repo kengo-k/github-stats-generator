@@ -15,9 +15,18 @@ const getStartOfWeek = (): string => {
 };
 
 router.get("/langs", async (req: Request, res: Response) => {
-  const IGNORES = ["Dockerfile", "Makefile", "Nix", "Vim Script"];
+  const IGNORES = [
+    "Dockerfile",
+    "Makefile",
+    "Nix",
+    "Vim Script",
+    "HTML",
+    "CSS",
+    "SCSS",
+  ];
   const MAPPING: { [key: string]: string } = {
-    SCSS: "CSS",
+    MQL4: "MQL",
+    MQL5: "MQL",
   };
   const langs = await callLangsQuery({ login: config.OWNER });
   const nodes = langs.data.data.user.repositories.nodes;
