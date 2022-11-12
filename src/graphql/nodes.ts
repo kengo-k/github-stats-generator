@@ -1,6 +1,6 @@
 import { callGraphQL } from "../services/github";
 
-export const NodesQuery = (since: string) => `
+export const NodesQuery = (since: string, until: string) => `
   query nodes($ids: [ID!]!) {
     nodes(ids: $ids) {
       ... on Repository {
@@ -8,7 +8,7 @@ export const NodesQuery = (since: string) => `
         defaultBranchRef {
           target {
             ... on Commit {
-              history(since: "${since}") {
+              history(since: "${since}", until: "${until}") {
                 totalCount
               }
             }
@@ -33,7 +33,8 @@ export interface NodesQueryVariableType {
 
 export const callNodesQuery = (
   since: string,
+  until: string,
   variables: NodesQueryVariableType
 ) => {
-  return callGraphQL<typeof variables>(NodesQuery(since), variables);
+  return callGraphQL<typeof variables>(NodesQuery(since, until), variables);
 };

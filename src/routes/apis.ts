@@ -2,16 +2,29 @@ import { Response, Request, Router } from "express";
 import config from "../config";
 import { callNodesQuery } from "../graphql/nodes";
 import { callUserRepositoriesQuery } from "../graphql/user_repositories";
-import { startOfWeek, format } from "date-fns";
+import {
+  startOfWeek,
+  format,
+  startOfMonth,
+  addDays,
+  addMonths,
+} from "date-fns";
 import { callLangsQuery } from "../graphql/langs";
 
 const router = Router({ mergeParams: true });
 
-const getStartOfWeek = (): string => {
-  const date = startOfWeek(new Date());
-  const ymd = format(date, "yyyy-MM-dd");
-  const timeZone = "T00:00:00+09:00";
-  return `${ymd}${timeZone}`;
+const getDateRange = (): [string, string] => {
+  const sinceDate = startOfMonth(new Date());
+  const untilDate = addDays(addMonths(sinceDate, 1), -1);
+  const tos = (d: Date, isEnd: boolean) => {
+    const ymd = format(d, "yyyy-MM-dd");
+    let timeZone = "T00:00:00+09:00";
+    if (isEnd) {
+      timeZone = "T23:59:59+09:00";
+    }
+    return `${ymd}${timeZone}`;
+  };
+  return [tos(sinceDate, false), tos(untilDate, true)];
 };
 
 router.get("/langs", async (req: Request, res: Response) => {
@@ -58,7 +71,7 @@ router.get("/langs", async (req: Request, res: Response) => {
 });
 
 router.get("/active_projects", async (req: Request, res: Response) => {
-  const since = getStartOfWeek();
+  const [since, until] = getDateRange();
 
   // リポジトリの一覧を取得
   const projects = await callUserRepositoriesQuery({ login: config.OWNER });
@@ -71,7 +84,7 @@ router.get("/active_projects", async (req: Request, res: Response) => {
       return p.id;
     });
 
-  const recentRepos = await callNodesQuery(since, { ids: repoIDs });
+  const recentRepos = await callNodesQuery(since, until, { ids: repoIDs });
   const ret = recentRepos.data.data.nodes
     .filter((r: any) => {
       if (r.defaultBranchRef != null) {
@@ -92,7 +105,7 @@ router.get("/active_projects", async (req: Request, res: Response) => {
   ret.forEach((r: any) => {
     total_commit_count += r.commit_count;
   });
-  res.send(Object.assign({}, { since, total_commit_count, repos: ret }));
+  res.send(Object.assign({}, { since, until, total_commit_count, repos: ret }));
 });
 
 export default router;
