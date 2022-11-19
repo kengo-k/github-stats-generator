@@ -1,17 +1,19 @@
 <html>
   <head>
-    <script src="https://cdn.jsdelivr.net/npm/vue@3.2.41"></script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts@2"></script>
     <script src="https://code.highcharts.com/10.3/highcharts.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3.2.45/dist/vue.global.prod.js"></script>
   </head>
   <body>
     <div id="app" class="grid grid-cols-2 h-full">
-      <div id="active_projects_chart" class="h-full"></div>
-      <div id="used_languages_chart"></div>
+      <!-- <div id="active_projects_chart" class="h-full"></div>
+      <div id="used_languages_chart"></div> -->
+      <my-languages />
     </div>
   </body>
-  <script>
+  <script type="module">
+    import "./init.js";
     const initUsedLanguagesChart = (chartData) => {
       const totalSize = chartData.totalSize;
       const langMap = chartData.languages;
@@ -148,21 +150,5 @@
         series,
       });
     };
-
-    const app = Vue.createApp({
-      el: "#app",
-      data() {
-        return {};
-      },
-      mounted() {
-        fetch("/api/active_projects")
-          .then((response) => response.json())
-          .then((data) => initActiveProjectsChart(data));
-        fetch("/api/langs")
-          .then((response) => response.json())
-          .then((data) => initUsedLanguagesChart(data));
-      },
-    });
-    app.mount("#app");
   </script>
 </html>
