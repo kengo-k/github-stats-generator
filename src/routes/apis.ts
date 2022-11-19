@@ -72,10 +72,16 @@ router.get("/langs", async (req: Request, res: Response) => {
 });
 
 router.get("/active_projects", async (req: Request, res: Response) => {
-  const [since_0, until_0] = getDateRange(0);
-  const [since_1, until_1] = getDateRange(-1);
-  const [since_2, until_2] = getDateRange(-2);
-
+  const since = req.query.since + "T00:00:00+09:00";
+  const until = req.query.until + "T23:59:59+09:00";
+  console.log(since);
+  console.log(until);
+  if (typeof since !== "string") {
+    throw new Error("invalid argument");
+  }
+  if (typeof until !== "string") {
+    throw new Error("invalid argument");
+  }
   const call = async (since: string, until: string) => {
     // リポジトリの一覧を取得
     const projects = await callUserRepositoriesQuery({ login: config.OWNER });
@@ -108,10 +114,8 @@ router.get("/active_projects", async (req: Request, res: Response) => {
     });
     return { since, until, total_commit_count, repos: ret };
   };
-  const res0 = await call(since_0, until_0);
-  const res1 = await call(since_1, until_1);
-  const res2 = await call(since_2, until_2);
-  res.send([res2, res1, res0]);
+  const result = await call(since, until);
+  res.send(result);
 });
 
 export default router;

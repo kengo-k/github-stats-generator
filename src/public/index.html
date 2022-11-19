@@ -7,89 +7,15 @@
   </head>
   <body>
     <div id="app" class="grid grid-cols-2 h-full">
-      <!-- <div id="active_projects_chart" class="h-full"></div>
-      <div id="used_languages_chart"></div> -->
-      <my-languages />
+      <div>
+        <active-projects />
+      </div>
+      <div>
+        <my-languages />
+      </div>
     </div>
   </body>
   <script type="module">
     import "./init.js";
-    const initActiveProjectsChart = (data) => {
-      const repoMap = {};
-      const dataMap = { keys: [], repos: repoMap };
-      data.forEach((item) => {
-        const since = item.since.substring(0, 7);
-        if (!dataMap.keys.includes(since)) {
-          dataMap.keys.push(since);
-        }
-        const repos = item.repos;
-        for (const repo of repos) {
-          const name = repo.name;
-          if (!(name in repoMap)) {
-            repoMap[name] = { name };
-          }
-          if (name in repoMap) {
-            const data = repoMap[name];
-            data[since] = repo.commit_count;
-          }
-        }
-      });
-      const repos = dataMap.repos;
-      const series = Object.keys(repos).map((repoName) => {
-        const repo = repos[repoName];
-        const data = [];
-        for (const key of dataMap.keys) {
-          if (key in repo) {
-            data.push(repo[key]);
-          } else {
-            data.push(0);
-          }
-        }
-        return {
-          name: repo.name,
-          data,
-        };
-      });
-
-      Highcharts.chart("active_projects_chart", {
-        chart: {
-          type: "column",
-        },
-        legend: {
-          enabled: false,
-        },
-        title: {
-          text: "Commits by project in the last 3 months",
-        },
-
-        xAxis: {
-          categories: dataMap.keys,
-        },
-
-        yAxis: {
-          allowDecimals: false,
-          min: 0,
-          title: {
-            text: "Commit",
-          },
-        },
-
-        tooltip: {
-          formatter: function () {
-            return (
-              "<b>" + this.x + "</b><br/>" + this.series.name + ": " + this.y
-            );
-          },
-        },
-
-        plotOptions: {
-          column: {
-            stacking: "normal",
-          },
-        },
-
-        series,
-      });
-    };
   </script>
 </html>

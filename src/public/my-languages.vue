@@ -1,5 +1,5 @@
 <template>
-  <div id="chart"></div>
+  <div id="languages-chart"></div>
 </template>
 
 <script>
@@ -24,7 +24,7 @@
           return 1;
         }
       });
-    Highcharts.chart("chart", {
+    Highcharts.chart("languages-chart", {
       chart: {
         plotBackgroundColor: null,
         plotBorderWidth: null,
@@ -62,7 +62,7 @@
     });
   };
 
-  module.exports = {
+  export default {
     data: function() {
       return {
       }
