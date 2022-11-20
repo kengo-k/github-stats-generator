@@ -31,7 +31,8 @@
       },
 
       title: {
-          text: title
+          text: title,
+          style: { "fontSize": "14px" }
       },
 
       tooltip: {
@@ -51,7 +52,7 @@
               dataLabels: {
                   enabled: true,
                   format: '{point.y}',
-                  distance: -20,
+                  distance: -25,
                   filter: {
                       property: 'percentage',
                       operator: '>',

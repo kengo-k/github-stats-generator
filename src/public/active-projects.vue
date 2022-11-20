@@ -32,22 +32,20 @@
       return {
         current: {
           id: "active-projects-current",
-          title: "active projects: ",
         },
         prev1: {
           id: "active-projects-prev1",
-          title: "active projects: ",
         },
         prev2: {
           id: "active-projects-prev2",
-          title: "active projects: ",
         },
       }
     },
     methods: {
-      init(json, chartData) {
+      init(json, since, until, chartData) {
         const data = createData(json);
         chartData.series = data;
+        chartData.title = `from ${since} to ${until}`
       }
     },
     mounted() {
@@ -58,15 +56,15 @@
 
       fetch(`/api/active_projects?since=${currentRange[0]}&until=${currentRange[1]}`)
         .then((response) => response.json())
-        .then((json) => this.init(json, this.current));
+        .then((json) => this.init(json, currentRange[0], currentRange[1], this.current));
 
       fetch(`/api/active_projects?since=${prev1Range[0]}&until=${prev1Range[1]}`)
         .then((response) => response.json())
-        .then((json) => this.init(json, this.prev1));
+        .then((json) => this.init(json, prev1Range[0], prev1Range[1], this.prev1));
 
       fetch(`/api/active_projects?since=${prev2Range[0]}&until=${prev2Range[1]}`)
         .then((response) => response.json())
-        .then((json) => this.init(json, this.prev2));
+        .then((json) => this.init(json, prev2Range[0], prev2Range[1], this.prev2));
     }
   }
 </script>
