@@ -29,7 +29,7 @@ const getDateRange = (prevMonth: number): [string, string] => {
 };
 
 router.get("/langs", async (req: Request, res: Response) => {
-  const IGNORES = ["Dockerfile", "Makefile", "Nix", "Vim Script", "HTML"];
+  const IGNORES = ["Makefile", "Nix", "Vim Script", "Batchfile"];
   const MAPPING: { [key: string]: string } = {
     MQL4: "MQL",
     MQL5: "MQL",
