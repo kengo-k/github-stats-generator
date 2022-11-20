@@ -107,6 +107,17 @@ router.get("/active_projects", async (req: Request, res: Response) => {
           name: r.name,
           commit_count: r.defaultBranchRef.target.history.totalCount,
         };
+      })
+      .sort((a: any, b: any) => {
+        const cnt1 = a.commit_count;
+        const cnt2 = b.commit_count;
+        if (cnt1 === cnt2) {
+          return 0;
+        } else if (cnt1 > cnt2) {
+          return -1;
+        } else {
+          return 1;
+        }
       });
     let total_commit_count = 0;
     ret.forEach((r: any) => {
