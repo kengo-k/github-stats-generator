@@ -41,22 +41,20 @@ const loaderOption = {
 };
 
 const componentList = [
+  ["pie-chart", "./pie-chart.vue"],
   ["my-languages", "./my-languages.vue"],
   ["active-projects", "./active-projects.vue"],
 ];
 
-const components = {};
-componentList.forEach((comp) => {
-  components[comp[0]] = Vue.defineAsyncComponent(() =>
-    loadModule(comp[1], loaderOption)
-  );
-});
-
-console.log(components);
-
 const app = Vue.createApp({
   el: "#app",
-  components,
+});
+
+componentList.forEach((comp) => {
+  const component = Vue.defineAsyncComponent(() =>
+    loadModule(comp[1], loaderOption)
+  );
+  app.component(comp[0], component);
 });
 
 app.mount("#app");
