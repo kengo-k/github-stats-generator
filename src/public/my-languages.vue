@@ -24,42 +24,61 @@
           return 1;
         }
       });
-    Highcharts.chart("languages-chart", {
-      chart: {
-        plotBackgroundColor: null,
-        plotBorderWidth: null,
-        plotShadow: false,
-        type: "pie",
-      },
-      title: {
-        text: "Used languages in projects",
-      },
-      tooltip: {
-        pointFormat: "{series.name}: <b>{point.percentage:.1f}%</b>",
-      },
-      accessibility: {
-        point: {
-          valueSuffix: "%",
+      console.log(seriesData);
+
+      Highcharts.chart('languages-chart', {
+        chart: {
+            type: 'bar'
         },
-      },
-      plotOptions: {
-        pie: {
-          allowPointSelect: true,
-          cursor: "pointer",
-          dataLabels: {
-            enabled: true,
-            format: "<b>{point.name}</b>: {point.percentage:.1f} %",
-          },
+        title: {
+            align: 'left',
+            text: 'Browser market shares. January, 2022'
         },
-      },
-      series: [
-        {
-          name: "Brands",
-          colorByPoint: true,
-          data: seriesData,
+        subtitle: {
+            align: 'left',
+            text: 'Click the columns to view versions. Source: <a href="http://statcounter.com" target="_blank">statcounter.com</a>'
         },
-      ],
+        accessibility: {
+            announceNewData: {
+                enabled: true
+            }
+        },
+        xAxis: {
+            type: 'category'
+        },
+        yAxis: {
+            title: {
+                text: 'Total percent market share'
+            }
+
+        },
+        legend: {
+            enabled: false
+        },
+        plotOptions: {
+            series: {
+                borderWidth: 0,
+                dataLabels: {
+                    enabled: true,
+                    format: '{point.y}'
+                }
+            }
+        },
+
+        tooltip: {
+            headerFormat: '<span style="font-size:11px">{series.name}</span><br>',
+            pointFormat: '<span style="color:{point.color}">{point.name}</span>: <b>{point.y:.2f}%</b> of total<br/>'
+        },
+
+        series: [
+            {
+                name: "Browsers",
+                colorByPoint: true,
+                data: seriesData
+            }
+        ],
     });
+
   };
 
   export default {
