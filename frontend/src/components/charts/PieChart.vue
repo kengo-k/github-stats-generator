@@ -61,6 +61,7 @@ const initChart = (chartData: {
       },
 
       accessibility: {
+        enabled: false,
         point: {
           valueSuffix: "%",
         },

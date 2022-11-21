@@ -28,6 +28,7 @@ const initChart = (chartData: { id: string; series: ChartSeriesData[] }) => {
         text: 'Click the columns to view versions. Source: <a href="http://statcounter.com" target="_blank">statcounter.com</a>',
       },
       accessibility: {
+        enabled: false,
         announceNewData: {
           enabled: true,
         },
