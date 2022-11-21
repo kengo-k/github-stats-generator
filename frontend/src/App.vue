@@ -1,6 +1,12 @@
 <template>
-  <ActiveProjects />
-  <UsedLanguages />
+  <div id="app" class="grid grid-cols-2 h-full">
+    <div>
+      <ActiveProjects />
+    </div>
+    <div>
+      <UsedLanguages />
+    </div>
+  </div>
 </template>
 
 <script lang="ts">
