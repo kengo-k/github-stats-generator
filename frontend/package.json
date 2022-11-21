@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "vue-cli-service build --watch --no-clean --dest ../backend/src/public",
+    "dev": "vue-cli-service build --watch --dest ../backend/src/public",
     "build": "vue-cli-service build --dest ../backend/src/public",
     "lint": "vue-cli-service lint"
   },
