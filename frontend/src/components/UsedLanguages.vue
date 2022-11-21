@@ -34,7 +34,7 @@ export default defineComponent({
         .map((key) => {
           return {
             name: key,
-            y: langMap[key].size,
+            y: Math.floor(langMap[key].size / 1000),
             color: langMap[key].color,
           };
         })
