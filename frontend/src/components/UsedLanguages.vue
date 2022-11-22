@@ -1,5 +1,5 @@
 <template>
-  <BarChart :id="id" :series="series" />
+  <BarChart :id="id" :series="series" :title="title" />
 </template>
 
 <script lang="ts">
@@ -9,6 +9,7 @@ import { ChartSeriesData } from "./charts/BarChart.vue";
 import BarChart from "./charts/BarChart.vue";
 
 interface ResponseData {
+  totalSize: number;
   languages: {
     [lang: string]: {
       size: number;
@@ -24,18 +25,25 @@ export default defineComponent({
     return {
       id: "used-languages-chart",
       series: [] as ChartSeriesData[],
+      title: "Used languages ranking",
     };
   },
   methods: {
     init(json: ResponseData) {
+      console.log(json);
+      const totalSize = json.totalSize;
       const langMap = json.languages;
       const keys = Object.keys(langMap);
       const seriesData = keys
         .map((key) => {
           return {
             name: key,
-            y: Math.floor(langMap[key].size / 1000),
+            y: (langMap[key].size / totalSize) * 100,
+            size: Math.floor(langMap[key].size / 1000),
             color: langMap[key].color,
+            dataLabels: {
+              format: "{point.y:.1f}% ({point.size}K)",
+            },
           };
         })
         .sort((a, b) => {

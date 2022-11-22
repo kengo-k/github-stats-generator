@@ -10,9 +10,17 @@ export interface ChartSeriesData {
   name: string;
   y: number;
   color: string;
+  size: number;
+  dataLabels?: {
+    format: string;
+  };
 }
 
-const initChart = (chartData: { id: string; series: ChartSeriesData[] }) => {
+const initChart = (chartData: {
+  id: string;
+  title: string;
+  series: ChartSeriesData[];
+}) => {
   Highcharts.chart(
     chartData.id,
     {
@@ -21,11 +29,7 @@ const initChart = (chartData: { id: string; series: ChartSeriesData[] }) => {
       },
       title: {
         align: "left",
-        text: "Browser market shares. January, 2022",
-      },
-      subtitle: {
-        align: "left",
-        text: 'Click the columns to view versions. Source: <a href="http://statcounter.com" target="_blank">statcounter.com</a>',
+        text: chartData.title,
       },
       accessibility: {
         enabled: false,
@@ -37,8 +41,10 @@ const initChart = (chartData: { id: string; series: ChartSeriesData[] }) => {
         type: "category",
       },
       yAxis: {
+        min: 0,
+        max: 100,
         title: {
-          text: "Total percent market share",
+          text: "Percentage",
         },
       },
       legend: {
@@ -55,9 +61,9 @@ const initChart = (chartData: { id: string; series: ChartSeriesData[] }) => {
       },
 
       tooltip: {
-        headerFormat: '<span style="font-size:11px">{series.name}</span><br>',
+        headerFormat: "",
         pointFormat:
-          '<span style="color:{point.color}">{point.name}</span>: <b>{point.y}K</b> of total<br/>',
+          '<span style="color:{point.color}">{point.name}</span>: <br/>Size: <b>{point.size}K</b><br/>Ratio: <b>{point.y:.1f}%</b>',
       },
 
       series: [
@@ -80,6 +86,10 @@ export default defineComponent({
       type: String,
       required: true,
     },
+    title: {
+      type: String,
+      required: true,
+    },
     series: {
       type: Array as PropType<ChartSeriesData[]>,
       required: true,
@@ -89,6 +99,7 @@ export default defineComponent({
     initChart({
       id: this.id,
       series: this.series,
+      title: this.title,
     });
   },
 });
