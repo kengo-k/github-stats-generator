@@ -11,7 +11,7 @@ fn create_bar_chart(data: &str, width: i32) -> String {
     // 個々の棒グラフの高さを20に固定する。
     let bar_height = 20;
 
-    let view_height = json.as_object().unwrap().len() as i32 * bar_height + 200;
+    let view_height = json.as_object().unwrap().len() as i32 * (bar_height + 10);
     println!("view_height: {}", view_height);
 
     // 引数で指定されたwidthを持つSVGを生成する。
@@ -39,7 +39,7 @@ fn create_bar_chart(data: &str, width: i32) -> String {
         let rect = Rectangle::new()
             .set("x", 100)  // テキストの分だけ棒グラフを右に移動
             .set("y", y)
-            .set("width", size.as_f64().unwrap() * 100.0)
+            .set("width", size.as_f64().unwrap() * 200.0)
             .set("height", 20)  // 高さを調整
             .set("fill", "blue");
         document = document.add(rect);
@@ -67,10 +67,16 @@ fn create_bar_chart(data: &str, width: i32) -> String {
 /// "rust": 50
 fn get_json() -> String {
     r#"{
-        "java": 1000,
         "typescript": 200,
         "go": 300,
-        "rust": 50
+        "rust": 50,
+        "css": 100,
+        "html": 200,
+        "elm": 20,
+        "yaml": 30,
+        "haskell": 20,
+        "ocaml": 10,
+        "python": 900
     }"#.to_string()
 }
 
@@ -78,7 +84,7 @@ fn get_json() -> String {
 fn index() -> (ContentType, String) {
     let data = &get_json();
     // 例として、SVGデータを動的に生成する関数を呼び出します。
-    let svg_data = create_bar_chart(data, 1000);
+    let svg_data = create_bar_chart(data, 300);
 
     // 生成されたSVGデータを返す。
     (ContentType::SVG, svg_data)
