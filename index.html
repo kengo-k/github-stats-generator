@@ -3,8 +3,24 @@
   <head>
     <title>SVG Test</title>
     <script src="main.js"></script>
+    <style>
+      div {
+        /* 薄いグレーで角に少し丸みをつけたボーダーをつける */
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        /* ボーダーの右下にドロップシャドウをつける */
+        box-shadow: 1px 1px 1px rgba(0, 0, 0, 0.2);
+
+        /* border: 1px solid black; */
+        width: 300px;
+
+        padding: 2px;
+      }
+    </style>
   </head>
   <body>
-    <img id="svgImage" src="http://127.0.0.1:8000" alt="SVG image" />
+    <div>
+      <img id="svgImage" src="http://127.0.0.1:8000" alt="SVG image" />
+    </div>
   </body>
 </html>
