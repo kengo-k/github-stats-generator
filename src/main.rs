@@ -4,6 +4,8 @@ use rocket::http::ContentType;
 
 use svg::Document;
 use svg::node::element::{Rectangle, Text};
+use std::fs::File;
+use std::io::prelude::*;
 
 fn create_bar_chart(data: &str, width: i32) -> String {
     let json: serde_json::Value = serde_json::from_str(data).unwrap();
@@ -53,21 +55,18 @@ fn create_bar_chart(data: &str, width: i32) -> String {
         y += 30;  // 間隔を調整
     }
 
+    // SVG仕様確認用に直接ファイルを編集→ブラウザで確認できるようにsvgファイルを出力しておく
+    let mut file = File::create("image.svg").unwrap();
+    file.write_all(document.to_string().as_bytes()).unwrap();
+
     document.to_string()
 }
 
 /// データを取得する関数
 /// TODO: あとでGitHubのGraphQL APIを呼び出して実際のデータを取得する
-///
-/// 現状では暫定値として以下のキーと値をもつJSON文字列を返す。
-///
-/// "java": 1000,
-/// "typescript": 200,
-/// "go": 300,
-/// "rust": 50
 fn get_json() -> String {
     r#"{
-        "typescript": 200,
+        "typescript": 600,
         "go": 300,
         "rust": 50,
         "css": 100,
