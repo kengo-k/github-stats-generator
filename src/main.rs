@@ -1,11 +1,15 @@
 #[macro_use] extern crate rocket;
 
-use rocket::http::ContentType;
+use rocket::http::{ContentType, Status};
 
 use svg::Document;
 use svg::node::element::{Rectangle, Text};
 use std::fs::File;
+use std::io::Cursor;
 use std::io::prelude::*;
+use rocket::{Request, response, Response};
+use rocket::response::Responder;
+use serde_json::json;
 
 #[derive(Debug)]
 enum AppError {
@@ -36,6 +40,20 @@ fn to_map(json: &serde_json::Value) -> Result<&serde_json::Map<String, serde_jso
         None => {
             return Err(AppError::JsonCreateFailure);
         }
+    }
+}
+
+#[rocket::async_trait]
+impl<'r> Responder<'r, 'static> for AppError {
+    fn respond_to(self, _: &'r Request<'_>) -> response::Result<'static> {
+        let body = json!({ "error": "failure" }).to_string();
+        let len = body.len();
+
+        Response::build()
+            .status(Status::BadRequest)
+            .header(ContentType::JSON)
+            .sized_body(len, Cursor::new(body))
+            .ok()
     }
 }
 
@@ -90,7 +108,9 @@ fn create_bar_chart(data: &str, width: i32) -> Result<String, AppError> {
         y += 30;  // 間隔を調整
     }
 
-    // SVG仕様確認用に直接ファイルを編集→ブラウザで確認できるようにsvgファイルを出力しておく
+    // SVG仕様確認用に直接SVGファイル出力しておく。
+    // SVGファイルを直接編集して表示を確認するために使う。
+    // TODO 後で消す
     let file = File::create("image.svg");
     let mut file = match file {
         Ok(f) => f,
@@ -121,13 +141,13 @@ fn get_json() -> String {
 }
 
 #[get("/")]
-fn index() -> (ContentType, String) {
+fn index() -> Result<(ContentType, String), AppError> {
     let data = &get_json();
     // 例として、SVGデータを動的に生成する関数を呼び出します。
-    let svg_data = create_bar_chart(data, 300).unwrap();
+    let svg_data = create_bar_chart(data, 300)?;
 
     // 生成されたSVGデータを返す。
-    (ContentType::SVG, svg_data)
+    Ok((ContentType::SVG, svg_data))
 }
 
 #[launch]
