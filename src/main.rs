@@ -10,7 +10,8 @@ use std::io::prelude::*;
 #[derive(Debug)]
 enum AppError {
     JsonCreateFailure,
-    JsonExtractValueFailure
+    JsonExtractValueFailure,
+    JsonPublishFailure
 }
 
 trait JsonValueExtension {
@@ -90,8 +91,14 @@ fn create_bar_chart(data: &str, width: i32) -> Result<String, AppError> {
     }
 
     // SVG仕様確認用に直接ファイルを編集→ブラウザで確認できるようにsvgファイルを出力しておく
-    let mut file = File::create("image.svg").unwrap();
-    file.write_all(document.to_string().as_bytes()).unwrap();
+    let file = File::create("image.svg");
+    let mut file = match file {
+        Ok(f) => f,
+        Err(_) => {
+            return Err(AppError::JsonPublishFailure);
+        }
+    };
+    let _ = file.write_all(document.to_string().as_bytes());
 
     Ok(document.to_string())
 }
