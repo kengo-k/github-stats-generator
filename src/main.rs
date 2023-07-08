@@ -3,7 +3,7 @@
 use rocket::http::{ContentType, Status};
 
 use svg::Document;
-use svg::node::element::{Rectangle, Text};
+use svg::node::element::{Definitions, LinearGradient, Rectangle, Stop, Text};
 use std::fs::File;
 use std::io::Cursor;
 use std::io::prelude::*;
@@ -19,12 +19,16 @@ enum AppError {
 }
 
 trait JsonValueExtension {
-    fn get_value(&self) -> Result<i64, AppError>;
+    fn to_int(&self) -> Result<i64, AppError>;
+    fn to_float(&self) -> Result<f64, AppError>;
 }
 
 impl JsonValueExtension for serde_json::Value {
-    fn get_value(&self) -> Result<i64, AppError> {
+    fn to_int(&self) -> Result<i64, AppError> {
         self.as_i64().ok_or(AppError::JsonExtractValueFailure)
+    }
+    fn to_float(&self) -> Result<f64, AppError> {
+        self.as_f64().ok_or(AppError::JsonExtractValueFailure)
     }
 }
 
@@ -72,17 +76,41 @@ fn create_bar_chart(data: &str, width: i32) -> Result<String, AppError> {
     let mut document = Document::new()
         .set("viewBox", (0, 0, width, view_height));
 
+    let mut defs = Definitions::new();
+    let mut grad = LinearGradient::new()
+        .set("id", "grad1")
+        .set("x1", "0")
+        .set("x2", "0")
+        .set("y1", "0")
+        .set("y2", "1");
+
+    let stop = Stop::new()
+        .set("offset", "0%")
+        .set("stop-color", "white");
+
+    grad = grad.add(stop);
+
+    let stop = Stop::new()
+        .set("offset", "100%")
+        .set("stop-color", "black");
+    grad = grad.add(stop);
+
+
+    defs = defs.add(grad);
+
+    document = document.add(defs);
+
     // jsonの横幅を加工した新しいjsonデータratio_jsonを作成する
     // ratio_jsonの各要素の値はjsonの全要素の値の合計に対する割合となる
     let mut ratio_json = serde_json::Map::new();
 
     let mut sum = 0;
     for (_, size) in json_map {
-        sum += size.get_value()?
+        sum += size.to_int()?
     }
 
     for (language, size) in json_map {
-        let ratio = size.get_value()? as f64 / sum as f64;
+        let ratio = size.to_int()? as f64 / sum as f64;
         ratio_json.insert(language.to_string(), serde_json::Value::from(ratio));
     }
     // Mapで作成したratio_jsonをserde_json::Valueに変換する
@@ -94,9 +122,9 @@ fn create_bar_chart(data: &str, width: i32) -> Result<String, AppError> {
         let rect = Rectangle::new()
             .set("x", 100)  // テキストの分だけ棒グラフを右に移動
             .set("y", y)
-            .set("width", size.get_value()? as f64 * 200.0)
+            .set("width", size.to_float()? as f64 * 200.0)
             .set("height", 20)  // 高さを調整
-            .set("fill", "blue");
+            .set("fill", "url(#grad1)");
         document = document.add(rect);
 
         let text = Text::new()
