@@ -8,6 +8,7 @@ use svg::node::element::{Definitions, LinearGradient, Rectangle, Stop, Text};
 use std::fs::File;
 use std::io::Cursor;
 use std::io::prelude::*;
+use std::iter::Cycle;
 use std::string::ToString;
 use rocket::{Request, response, Response};
 use rocket::response::Responder;
@@ -84,7 +85,7 @@ struct GradientVector {
 }
 
 impl GradientVector {
-    const TOP_LEFT_BOTTOM_RIGHT: GradientVector = Self { x1: 0, y1: 0, x2: 0, y2: 1 };
+    const TOP_LEFT_BOTTOM_RIGHT: GradientVector = Self { x1: 0, y1: 0, x2: 1, y2: 1 };
 }
 
 struct RGB(i32, i32, i32);
@@ -119,6 +120,19 @@ impl GradientColor {
     const CYAN: GradientColor = Self { id: "cyan", rgb: RGB(43, 144, 143) };
     const RED: GradientColor = Self { id: "red", rgb: RGB(244, 91, 91) };
     const TURQUOISE: GradientColor = Self { id: "turquoise", rgb: RGB(145, 232, 225) };
+
+    const ALL_COLORS: [GradientColor; 10] = [
+        Self::BLUE,
+        Self::GRAY,
+        Self::GREEN,
+        Self::ORANGE,
+        Self::PURPLE,
+        Self::PINK,
+        Self::YELLOW,
+        Self::CYAN,
+        Self::RED,
+        Self::TURQUOISE
+    ];
 }
 
 trait LinearGraditionExtension {
@@ -140,30 +154,50 @@ impl LinearGraditionExtension for LinearGradient {
             .set("stop-color", gc.rgb.to_hex_string());
         let to = Stop::new()
             .set("offset", "100%")
-            .set("stop-color", gc.rgb.adjust_brightness(80.0).to_hex_string());
+            .set("stop-color", gc.rgb.adjust_brightness(-50.0).to_hex_string());
         self
             .add(from)
             .add(to)
     }
 }
 
-struct GradientManager {
-    liner_grad: LinearGradient
+struct GradientColorManager {
+    index: i32,
+    length: usize,
+    colors: Vec<String>
 }
 
-impl GradientManager {
+impl GradientColorManager {
+
     pub fn new() -> Self {
         Self {
-            liner_grad: LinearGradient::new()
+            index: 0,
+            length: GradientColor::ALL_COLORS.len(),
+            colors: GradientColor::ALL_COLORS
+                .iter()
+                .map(|c| String::from(c.id))
+                .collect()
+        }
+    }
+    pub fn next(&mut self) -> String {
+        let mut i = self.index;
+        let color = GradientColor::ALL_COLORS.get(i as usize);
+        i += 1;
+        if i == self.length as i32 {
+            i = 0;
+        }
+        self.index = i;
+        match color {
+            Some(c) => c.id.to_string(),
+            None => String::from("blue")
         }
     }
 }
 
 fn create_definitions() -> Definitions {
     let mut defs = Definitions::new();
-    let colors = [GradientColor::BLUE, GradientColor::GRAY, GradientColor::GREEN, GradientColor::ORANGE, GradientColor::PURPLE, GradientColor::PINK, GradientColor::YELLOW, GradientColor::CYAN, GradientColor::RED, GradientColor::TURQUOISE];
     // TODO for_eachに直してみたい
-    for c in &colors {
+    for c in &GradientColor::ALL_COLORS {
         let grad = LinearGradient::new()
             .set("id", c.id)
             .set_gradient_vector(&GradientVector::TOP_LEFT_BOTTOM_RIGHT)
@@ -179,7 +213,7 @@ fn create_bar_chart(data: &str, width: i32) -> Result<String, AppError> {
     let json_map = to_map(&json)?;
 
     // 個々の棒グラフの高さを20に固定する。
-    let bar_height = 10;
+    let bar_height = 20;
 
     let view_height = json_map.len() as i32 * (bar_height + 10);
 
@@ -209,15 +243,16 @@ fn create_bar_chart(data: &str, width: i32) -> Result<String, AppError> {
     let ration_json_map = to_map(&ratio_json)?;
 
     let mut y = 0;
+    let mut color_manager = GradientColorManager::new();
     for (language, size) in ration_json_map {
         let rect = Rectangle::new()
             .set("x", 100)  // テキストの分だけ棒グラフを右に移動
             .set("y", y)
-            .set("rx", 1)
-            .set("ry", 1)
+            .set("rx", 5)
+            .set("ry", 5)
             .set("width", size.to_float()? as f64 * 200.0)
-            .set("height", 200)  // 高さを調整
-            .set("fill", "url(#red)");
+            .set("height", 20)  // 高さを調整
+            .set("fill", format!("url(#{})", color_manager.next()));
         document = document.add(rect);
 
         let text = Text::new()
@@ -248,7 +283,16 @@ fn create_bar_chart(data: &str, width: i32) -> Result<String, AppError> {
 /// TODO: あとでGitHubのGraphQL APIを呼び出して実際のデータを取得する
 fn get_json() -> Result<String, AppError> {
     let mut data = HashMap::new();
-    data.insert("typescript", 600);
+    data.insert("typescript", 120);
+    data.insert("elm", 30);
+    data.insert("rust", 60);
+    data.insert("golang", 105);
+    data.insert("javascript", 35);
+    data.insert("css/scss/sass", 20);
+    data.insert("python", 70);
+    data.insert("scala", 55);
+    data.insert("haskell", 45);
+    data.insert("kotlin", 25);
     let result = serde_json::to_string(&data);
     result.map_err(|_| AppError::GetJsonSourceError)
 }
