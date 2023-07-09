@@ -1,5 +1,6 @@
 #[macro_use] extern crate rocket;
 
+use std::collections::HashMap;
 use rocket::http::{ContentType, Status};
 
 use svg::Document;
@@ -7,12 +8,14 @@ use svg::node::element::{Definitions, LinearGradient, Rectangle, Stop, Text};
 use std::fs::File;
 use std::io::Cursor;
 use std::io::prelude::*;
+use std::string::ToString;
 use rocket::{Request, response, Response};
 use rocket::response::Responder;
 use serde_json::json;
 
 #[derive(Debug)]
 enum AppError {
+    GetJsonSourceError, // SVG生成の元になる入力データの取得に失敗したことを示すエラー
     JsonCreateFailure,
     JsonExtractValueFailure,
     JsonPublishFailure
@@ -61,6 +64,83 @@ impl<'r> Responder<'r, 'static> for AppError {
     }
 }
 
+fn create_linear_gradient() -> LinearGradient {
+    let grad = LinearGradient::new()
+        .set("id", "grad1")
+        .set("x1", "0")
+        .set("x2", "0")
+        .set("y1", "0")
+        .set("y2", "1");
+    grad
+}
+
+struct GradientVector {
+    x1: i32,
+    y1: i32,
+    x2: i32,
+    y2: i32
+}
+
+impl GradientVector {
+    const TOP_LEFT_BOTTOM_RIGHT: GradientVector = Self { x1: 0, y1: 0, x2: 0, y2: 1 };
+}
+
+struct GradientColor {
+    from: &'static str,
+    to: &'static str
+}
+
+impl GradientColor {
+    const BLUE: GradientColor = Self { from: "#7cb5ec", to: "#6391bd" };
+    const Grey: GradientColor = Self { from: "#434348", to: "#363a3a" };
+    const Green: GradientColor = Self { from: "#90ed7d", to: "#72b864" };
+    const Orange: GradientColor = Self { from: "#f7a35c", to: "#c6834d" };
+    const Purple: GradientColor = Self { from: "#8085e9", to: "#666cb5" };
+    const Pink: GradientColor = Self { from: "#f15c80", to: "#c64a66" };
+    const Yellow: GradientColor = Self { from: "#e4d354", to: "#b8ac43" };
+    const Cyan: GradientColor = Self { from: "#2b908f", to: "#237273" };
+    const Red: GradientColor = Self { from: "#f45b5b", to: "#c34a4a" };
+    const Turquoise: GradientColor = Self { from: "#91e8e1", to: "#74b4b1" };
+}
+
+trait LinearGraditionExtension {
+    fn set_gradient_vector(self, gv: &GradientVector) -> Self;
+    fn set_gradient_color(self, gc: &GradientColor) -> Self;
+}
+
+impl LinearGraditionExtension for LinearGradient {
+    fn set_gradient_vector(self, gv: &GradientVector) -> Self {
+        self
+            .set("x1", format!("{}", gv.x1))
+            .set("y1", format!("{}", gv.y1))
+            .set("x2", format!("{}", gv.x2))
+            .set("y2", format!("{}", gv.y2))
+    }
+    fn set_gradient_color(self, gc: &GradientColor) -> Self {
+        let from = Stop::new()
+            .set("offset", "0%")
+            .set("stop-color", gc.from);
+        let to = Stop::new()
+            .set("offset", "100%")
+            .set("stop-color", gc.to);
+        self
+            .add(from)
+            .add(to)
+    }
+}
+
+struct GradientManager {
+    liner_grad: LinearGradient
+}
+
+impl GradientManager {
+    pub fn new() -> Self {
+        Self {
+            liner_grad: LinearGradient::new()
+        }
+    }
+}
+
 fn create_bar_chart(data: &str, width: i32) -> Result<String, AppError> {
 
     let json: serde_json::Value = serde_json::from_str(data)?;
@@ -78,23 +158,9 @@ fn create_bar_chart(data: &str, width: i32) -> Result<String, AppError> {
 
     let mut defs = Definitions::new();
     let mut grad = LinearGradient::new()
-        .set("id", "grad1")
-        .set("x1", "0")
-        .set("x2", "0")
-        .set("y1", "0")
-        .set("y2", "1");
-
-    let stop = Stop::new()
-        .set("offset", "0%")
-        .set("stop-color", "white");
-
-    grad = grad.add(stop);
-
-    let stop = Stop::new()
-        .set("offset", "100%")
-        .set("stop-color", "black");
-    grad = grad.add(stop);
-
+        .set_gradient_vector(&GradientVector::TOP_LEFT_BOTTOM_RIGHT)
+        .set_gradient_color(&GradientColor::Cyan)
+        .set("id", "grad1");
 
     defs = defs.add(grad);
 
@@ -122,6 +188,8 @@ fn create_bar_chart(data: &str, width: i32) -> Result<String, AppError> {
         let rect = Rectangle::new()
             .set("x", 100)  // テキストの分だけ棒グラフを右に移動
             .set("y", y)
+            .set("rx", 1)
+            .set("ry", 1)
             .set("width", size.to_float()? as f64 * 200.0)
             .set("height", 20)  // 高さを調整
             .set("fill", "url(#grad1)");
@@ -153,24 +221,16 @@ fn create_bar_chart(data: &str, width: i32) -> Result<String, AppError> {
 
 /// データを取得する関数
 /// TODO: あとでGitHubのGraphQL APIを呼び出して実際のデータを取得する
-fn get_json() -> String {
-    r#"{
-        "typescript": 600,
-        "go": 300,
-        "rust": 50,
-        "css": 100,
-        "html": 200,
-        "elm": 20,
-        "yaml": 30,
-        "haskell": 20,
-        "ocaml": 10,
-        "python": 900
-    }"#.to_string()
+fn get_json() -> Result<String, AppError> {
+    let mut data = HashMap::new();
+    data.insert("typescript", 600);
+    let result = serde_json::to_string(&data);
+    result.map_err(|_| AppError::GetJsonSourceError)
 }
 
 #[get("/")]
 fn index() -> Result<(ContentType, String), AppError> {
-    let data = &get_json();
+    let data = &get_json()?;
     // 例として、SVGデータを動的に生成する関数を呼び出します。
     let svg_data = create_bar_chart(data, 300)?;
 
