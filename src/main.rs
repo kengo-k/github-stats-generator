@@ -12,6 +12,8 @@ use std::string::ToString;
 use rocket::{Request, response, Response};
 use rocket::response::Responder;
 use serde_json::json;
+use svg::node::element::path::Command::Line;
+use svg::node::element::tag::LinearGradient;
 
 #[derive(Debug)]
 enum AppError {
@@ -86,21 +88,22 @@ impl GradientVector {
 }
 
 struct GradientColor {
+    id: &'static str,
     from: &'static str,
-    to: &'static str
+    to: &'static str,
 }
 
 impl GradientColor {
-    const BLUE: GradientColor = Self { from: "#7cb5ec", to: "#6391bd" };
-    const Grey: GradientColor = Self { from: "#434348", to: "#363a3a" };
-    const Green: GradientColor = Self { from: "#90ed7d", to: "#72b864" };
-    const Orange: GradientColor = Self { from: "#f7a35c", to: "#c6834d" };
-    const Purple: GradientColor = Self { from: "#8085e9", to: "#666cb5" };
-    const Pink: GradientColor = Self { from: "#f15c80", to: "#c64a66" };
-    const Yellow: GradientColor = Self { from: "#e4d354", to: "#b8ac43" };
-    const Cyan: GradientColor = Self { from: "#2b908f", to: "#237273" };
-    const Red: GradientColor = Self { from: "#f45b5b", to: "#c34a4a" };
-    const Turquoise: GradientColor = Self { from: "#91e8e1", to: "#74b4b1" };
+    const BLUE: GradientColor = Self { id: "blue", from: "#7cb5ec", to: "#6391bd" };
+    const GRAY: GradientColor = Self { id: "gray", from: "#434348", to: "#363a3a" };
+    const GREEN: GradientColor = Self { id: "green", from: "#90ed7d", to: "#72b864" };
+    const ORANGE: GradientColor = Self { id: "orange", from: "#f7a35c", to: "#c6834d" };
+    const PURPLE: GradientColor = Self { id: "purple", from: "#8085e9", to: "#666cb5" };
+    const PINK: GradientColor = Self { id: "pink", from: "#f15c80", to: "#c64a66" };
+    const YELLOW: GradientColor = Self { id: "yellow", from: "#e4d354", to: "#b8ac43" };
+    const CYAN: GradientColor = Self { id: "cyan", from: "#2b908f", to: "#237273" };
+    const RED: GradientColor = Self { id: "red", from: "#f45b5b", to: "#c34a4a" };
+    const TURQUOISE: GradientColor = Self { id: "turquoise", from: "#91e8e1", to: "#74b4b1" };
 }
 
 trait LinearGraditionExtension {
@@ -141,6 +144,20 @@ impl GradientManager {
     }
 }
 
+fn create_definitions() -> Definitions {
+    let mut defs = Definitions::new();
+    let colors = [GradientColor::BLUE, GradientColor::GRAY, GradientColor::GREEN, GradientColor::ORANGE, GradientColor::PURPLE, GradientColor::PINK, GradientColor::YELLOW, GradientColor::CYAN, GradientColor::RED, GradientColor::TURQUOISE];
+    // TODO for_eachに直してみたい
+    for c in &colors {
+        let grad = LinearGradient::new()
+            .set("id", c.id)
+            .set_gradient_vector(&GradientVector::TOP_LEFT_BOTTOM_RIGHT)
+            .set_gradient_color(c);
+        defs = defs.add(grad);
+    }
+    defs
+}
+
 fn create_bar_chart(data: &str, width: i32) -> Result<String, AppError> {
 
     let json: serde_json::Value = serde_json::from_str(data)?;
@@ -155,14 +172,7 @@ fn create_bar_chart(data: &str, width: i32) -> Result<String, AppError> {
     // ただし、高さはデータの数に応じて自動的に決定する。
     let mut document = Document::new()
         .set("viewBox", (0, 0, width, view_height));
-
-    let mut defs = Definitions::new();
-    let mut grad = LinearGradient::new()
-        .set_gradient_vector(&GradientVector::TOP_LEFT_BOTTOM_RIGHT)
-        .set_gradient_color(&GradientColor::Cyan)
-        .set("id", "grad1");
-
-    defs = defs.add(grad);
+    let defs = create_definitions();
 
     document = document.add(defs);
 
@@ -192,7 +202,7 @@ fn create_bar_chart(data: &str, width: i32) -> Result<String, AppError> {
             .set("ry", 1)
             .set("width", size.to_float()? as f64 * 200.0)
             .set("height", 20)  // 高さを調整
-            .set("fill", "url(#grad1)");
+            .set("fill", "url(#red)");
         document = document.add(rect);
 
         let text = Text::new()
