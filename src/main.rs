@@ -87,23 +87,38 @@ impl GradientVector {
     const TOP_LEFT_BOTTOM_RIGHT: GradientVector = Self { x1: 0, y1: 0, x2: 0, y2: 1 };
 }
 
+struct RGB(i32, i32, i32);
+
+impl RGB {
+
+    fn to_hex_string(&self) -> String {
+        format!("#{:02X}{:02X}{:02X}", self.0, self.1, self.2)
+    }
+
+    fn adjust_brightness(&self, percentage: f32) -> Self {
+        let ratio = (100.0 + percentage) / 100.0;
+        Self((self.0 as f32 * ratio).max(0.0).min(255.0) as i32,
+             (self.1 as f32 * ratio).max(0.0).min(255.0) as i32,
+             (self.2 as f32 * ratio).max(0.0).min(255.0) as i32)
+    }
+}
+
 struct GradientColor {
     id: &'static str,
-    from: &'static str,
-    to: &'static str,
+    rgb: RGB
 }
 
 impl GradientColor {
-    const BLUE: GradientColor = Self { id: "blue", from: "#7cb5ec", to: "#6391bd" };
-    const GRAY: GradientColor = Self { id: "gray", from: "#434348", to: "#363a3a" };
-    const GREEN: GradientColor = Self { id: "green", from: "#90ed7d", to: "#72b864" };
-    const ORANGE: GradientColor = Self { id: "orange", from: "#f7a35c", to: "#c6834d" };
-    const PURPLE: GradientColor = Self { id: "purple", from: "#8085e9", to: "#666cb5" };
-    const PINK: GradientColor = Self { id: "pink", from: "#f15c80", to: "#c64a66" };
-    const YELLOW: GradientColor = Self { id: "yellow", from: "#e4d354", to: "#b8ac43" };
-    const CYAN: GradientColor = Self { id: "cyan", from: "#2b908f", to: "#237273" };
-    const RED: GradientColor = Self { id: "red", from: "#f45b5b", to: "#c34a4a" };
-    const TURQUOISE: GradientColor = Self { id: "turquoise", from: "#91e8e1", to: "#74b4b1" };
+    const BLUE: GradientColor = Self { id: "blue", rgb: RGB(124, 181, 236) };
+    const GRAY: GradientColor = Self { id: "gray", rgb: RGB(67, 67, 72) };
+    const GREEN: GradientColor = Self { id: "green", rgb: RGB( 144, 237, 125) };
+    const ORANGE: GradientColor = Self { id: "orange", rgb: RGB(247, 163, 92) };
+    const PURPLE: GradientColor = Self { id: "purple", rgb: RGB(128, 133, 233) };
+    const PINK: GradientColor = Self { id: "pink", rgb: RGB(241, 92, 128) };
+    const YELLOW: GradientColor = Self { id: "yellow", rgb: RGB(228, 211, 84) };
+    const CYAN: GradientColor = Self { id: "cyan", rgb: RGB(43, 144, 143) };
+    const RED: GradientColor = Self { id: "red", rgb: RGB(244, 91, 91) };
+    const TURQUOISE: GradientColor = Self { id: "turquoise", rgb: RGB(145, 232, 225) };
 }
 
 trait LinearGraditionExtension {
@@ -122,10 +137,10 @@ impl LinearGraditionExtension for LinearGradient {
     fn set_gradient_color(self, gc: &GradientColor) -> Self {
         let from = Stop::new()
             .set("offset", "0%")
-            .set("stop-color", gc.from);
+            .set("stop-color", gc.rgb.to_hex_string());
         let to = Stop::new()
             .set("offset", "100%")
-            .set("stop-color", gc.to);
+            .set("stop-color", gc.rgb.adjust_brightness(80.0).to_hex_string());
         self
             .add(from)
             .add(to)
@@ -164,14 +179,14 @@ fn create_bar_chart(data: &str, width: i32) -> Result<String, AppError> {
     let json_map = to_map(&json)?;
 
     // 個々の棒グラフの高さを20に固定する。
-    let bar_height = 20;
+    let bar_height = 10;
 
     let view_height = json_map.len() as i32 * (bar_height + 10);
 
     // 引数で指定されたwidthを持つSVGを生成する。
     // ただし、高さはデータの数に応じて自動的に決定する。
     let mut document = Document::new()
-        .set("viewBox", (0, 0, width, view_height));
+        .set("viewBox", (0, 0, width, 500));
     let defs = create_definitions();
 
     document = document.add(defs);
@@ -201,7 +216,7 @@ fn create_bar_chart(data: &str, width: i32) -> Result<String, AppError> {
             .set("rx", 1)
             .set("ry", 1)
             .set("width", size.to_float()? as f64 * 200.0)
-            .set("height", 20)  // 高さを調整
+            .set("height", 200)  // 高さを調整
             .set("fill", "url(#red)");
         document = document.add(rect);
 
