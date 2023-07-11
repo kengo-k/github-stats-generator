@@ -1,17 +1,24 @@
+mod query;
+
 #[macro_use]
 extern crate rocket;
 
+use reqwest::Client;
 use rocket::http::{ContentType, Status};
 use rocket::response::Responder;
 use rocket::{response, Request, Response};
 use serde_json::json;
 use std::collections::HashMap;
+use std::env;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::Cursor;
 use std::string::ToString;
+use graphql_client::GraphQLQuery;
 use svg::node::element::{Definitions, LinearGradient, Rectangle, Stop, Text};
 use svg::Document;
+use query::GithubStats;
+use crate::query::github_stats;
 
 #[derive(Debug)]
 enum AppError {
@@ -325,4 +332,40 @@ fn index() -> Result<(ContentType, String), AppError> {
 #[launch]
 fn rocket() -> _ {
     rocket::build().mount("/", routes![index])
+}
+
+async fn git_summary() -> Result<(), Box<dyn std::error::Error>> {
+    let token = env::var("GITHUB_TOKEN").expect("GITHUB_TOKEN is not set");
+    let client = Client::new();
+
+    let query = GithubStats::build_query(query::github_stats::Variables {
+    });
+
+    let response: github_stats::ResponseData = client
+        .post("https://api.github.com/graphql")
+        .bearer_auth(token)
+        .json(&query)
+        .send()
+        .await?
+        .json()
+        .await?;
+
+    // if let Some(user) = response.data.user {
+    //     if let Some(repos) = user.repositories.nodes {
+    //         for repo in repos {
+    //             if let Some(repo) = repo {
+    //                 println!("Repository: {}", repo.name);
+    //                 if let Some(langs) = repo.languages.edges {
+    //                     for lang in langs {
+    //                         if let Some(lang) = lang {
+    //                             println!("  Language: {}, Size: {}", lang.node.name, lang.size);
+    //                         }
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
+
+    Ok(())
 }
