@@ -3,8 +3,12 @@ mod query;
 #[macro_use]
 extern crate rocket;
 
+use crate::query::github_stats;
+use graphql_client::GraphQLQuery;
+use query::GithubStats;
 use reqwest::Client;
 use rocket::http::{ContentType, Status};
+use rocket::info;
 use rocket::response::Responder;
 use rocket::{response, Request, Response};
 use serde_json::json;
@@ -14,11 +18,8 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::io::Cursor;
 use std::string::ToString;
-use graphql_client::GraphQLQuery;
 use svg::node::element::{Definitions, LinearGradient, Rectangle, Stop, Text};
 use svg::Document;
-use query::GithubStats;
-use crate::query::github_stats;
 
 #[derive(Debug)]
 enum AppError {
@@ -320,11 +321,21 @@ fn get_json() -> Result<String, AppError> {
 }
 
 #[get("/")]
-fn index() -> Result<(ContentType, String), AppError> {
+async fn index() -> Result<(ContentType, String), AppError> {
+    info!("HELLO");
+    println!("call git summary!!!!!1");
     let data = &get_json()?;
     // 例として、SVGデータを動的に生成する関数を呼び出します。
     let svg_data = create_bar_chart(data, 300)?;
-
+    println!("call git summary!!!!!2");
+    let feature = git_summary().await;
+    match feature {
+        Ok(_) => {}
+        Err(e) => {
+            println!("error: {}", e);
+        }
+    }
+    println!("call git summary!!!!!3");
     // 生成されたSVGデータを返す。
     Ok((ContentType::SVG, svg_data))
 }
@@ -335,20 +346,40 @@ fn rocket() -> _ {
 }
 
 async fn git_summary() -> Result<(), Box<dyn std::error::Error>> {
+    println!("----- call async function -----1");
     let token = env::var("GITHUB_TOKEN").expect("GITHUB_TOKEN is not set");
-    let client = Client::new();
+    println!("token: `{}`", token);
+    println!("----- call async function -----2");
+    let client = Client::builder().user_agent("MyApp/0.1").build()?;
+    println!("----- call async function -----3");
+    let query = GithubStats::build_query(query::github_stats::Variables {});
+    println!("----- call async function -----4");
+    // let response: github_stats::ResponseData = client
+    //     .post("https://api.github.com/graphql")
+    //     .bearer_auth(token)
+    //     .json(&query)
+    //     .send()
+    //     .await?
+    //     .json()
+    //     .await?;
 
-    let query = GithubStats::build_query(query::github_stats::Variables {
-    });
-
-    let response: github_stats::ResponseData = client
+    let response = client
         .post("https://api.github.com/graphql")
         .bearer_auth(token)
         .json(&query)
         .send()
-        .await?
-        .json()
         .await?;
+
+    // レスポンスのステータスコードとボディを表示します。
+    println!("Status: {}", response.status());
+    let body = response.text().await?;
+    println!("Body: {}", body);
+
+    // println!("----- call async function -----5");
+    // //let edges = response.viewer.repositories.edges.unwrap();
+    // println!("----- call async function -----6");
+    // println!("edge size: {}", edges.len());
+    // println!("----- call async function -----7");
 
     // if let Some(user) = response.data.user {
     //     if let Some(repos) = user.repositories.nodes {
