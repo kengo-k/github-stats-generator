@@ -1,0 +1,32 @@
+{
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true,
+  "files.trimTrailingWhitespace": true,
+  "files.eol": "\n",
+
+  "editor.fontSize": 12,
+
+  "editor.tabSize": 2,
+  "editor.insertSpaces": false,
+  "editor.renderWhitespace": "all",
+
+  "editor.inlineSuggest.enabled": true,
+
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": true
+  },
+  "prettier.tabWidth": 2,
+
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+
+  "[jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+
+  "[markdown]": {
+    "editor.formatOnSave": false
+  }
+}
