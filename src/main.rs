@@ -11,6 +11,7 @@ use rocket::http::{ContentType, Status};
 use rocket::info;
 use rocket::response::Responder;
 use rocket::{response, Request, Response};
+use serde::Deserialize;
 use serde_json::json;
 use std::collections::HashMap;
 use std::env;
@@ -345,23 +346,15 @@ fn rocket() -> _ {
     rocket::build().mount("/", routes![index])
 }
 
+#[derive(Debug, Deserialize)]
+struct GraphQLResponse<T> {
+    data: T,
+}
+
 async fn git_summary() -> Result<(), Box<dyn std::error::Error>> {
-    println!("----- call async function -----1");
     let token = env::var("GITHUB_TOKEN").expect("GITHUB_TOKEN is not set");
-    println!("token: `{}`", token);
-    println!("----- call async function -----2");
     let client = Client::builder().user_agent("MyApp/0.1").build()?;
-    println!("----- call async function -----3");
     let query = GithubStats::build_query(query::github_stats::Variables {});
-    println!("----- call async function -----4");
-    // let response: github_stats::ResponseData = client
-    //     .post("https://api.github.com/graphql")
-    //     .bearer_auth(token)
-    //     .json(&query)
-    //     .send()
-    //     .await?
-    //     .json()
-    //     .await?;
 
     let response = client
         .post("https://api.github.com/graphql")
@@ -370,33 +363,12 @@ async fn git_summary() -> Result<(), Box<dyn std::error::Error>> {
         .send()
         .await?;
 
-    // レスポンスのステータスコードとボディを表示します。
-    println!("Status: {}", response.status());
     let body = response.text().await?;
-    println!("Body: {}", body);
+    println!("Response body: {}", body);
 
-    // println!("----- call async function -----5");
-    // //let edges = response.viewer.repositories.edges.unwrap();
-    // println!("----- call async function -----6");
-    // println!("edge size: {}", edges.len());
-    // println!("----- call async function -----7");
-
-    // if let Some(user) = response.data.user {
-    //     if let Some(repos) = user.repositories.nodes {
-    //         for repo in repos {
-    //             if let Some(repo) = repo {
-    //                 println!("Repository: {}", repo.name);
-    //                 if let Some(langs) = repo.languages.edges {
-    //                     for lang in langs {
-    //                         if let Some(lang) = lang {
-    //                             println!("  Language: {}, Size: {}", lang.node.name, lang.size);
-    //                         }
-    //                     }
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
+    let result: GraphQLResponse<github_stats::ResponseData> = serde_json::from_str(&body)?;
+    let edges = result.data.viewer.repositories.edges.unwrap();
+    println!("edge size: {}", edges.len());
 
     Ok(())
 }
