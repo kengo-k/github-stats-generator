@@ -235,14 +235,11 @@ fn create_definitions() -> Definitions {
     defs
 }
 
-fn create_bar_chart(data: &str, width: i32) -> Result<String, AppError> {
-    let json: serde_json::Value = serde_json::from_str(data)?;
-    let json_map = to_map(&json)?;
-
+fn create_bar_chart(data: &HashMap<String, SvgData>, width: i32) -> Result<String, AppError> {
     // 個々の棒グラフの高さを20に固定する。
     let bar_height = 20;
 
-    let view_height = json_map.len() as i32 * (bar_height + 10);
+    let view_height = data.len() as i32 * (bar_height + 10);
 
     // 引数で指定されたwidthを持つSVGを生成する。
     // ただし、高さはデータの数に応じて自動的に決定する。
@@ -256,12 +253,12 @@ fn create_bar_chart(data: &str, width: i32) -> Result<String, AppError> {
     let mut ratio_json = serde_json::Map::new();
 
     let mut sum = 0;
-    for (_, size) in json_map {
-        sum += size.to_int()?
+    for (_, svg_data) in data {
+        sum += svg_data.size;
     }
 
-    for (language, size) in json_map {
-        let ratio = size.to_int()? as f64 / sum as f64;
+    for (language, svg_data) in data {
+        let ratio = svg_data.size as f64 / sum as f64;
         ratio_json.insert(language.to_string(), serde_json::Value::from(ratio));
     }
     // Mapで作成したratio_jsonをserde_json::Valueに変換する
@@ -305,12 +302,13 @@ fn create_bar_chart(data: &str, width: i32) -> Result<String, AppError> {
     Ok(document.to_string())
 }
 
-/// データを取得する関数
-/// TODO: あとでGitHubのGraphQL APIを呼び出して実際のデータを取得する
-fn get_json(stats: &ResponseData) -> Result<String, AppError> {
-    // 引数statsを元にHashMapを作成する。HashMapの構成は以下の通り。key: 言語名、value: 言語のサイズ
+struct SvgData {
+    name: String,
+    size: i64,
+}
 
-    let mut data: HashMap<&String, i64> = HashMap::new();
+fn get_json(stats: &ResponseData) -> Result<HashMap<String, SvgData>, AppError> {
+    let mut data: HashMap<String, SvgData> = HashMap::new();
 
     let viewer = &stats.viewer;
     let repositories = viewer
@@ -339,19 +337,25 @@ fn get_json(stats: &ResponseData) -> Result<String, AppError> {
             let repo_lang = repo_lang.as_ref().ok_or(AppError::JsonPublishFailure)?;
             let size = repo_lang.size;
             let name = &repo_lang.node.name;
+
+            if name == "HTML" {
+                continue;
+            }
+
             let _color = repo_lang
                 .node
                 .color
                 .as_ref()
                 .ok_or(AppError::JsonPublishFailure)?;
 
-            let entry = data.entry(name).or_insert(0);
-            *entry += size;
+            let entry = data.entry(name.to_string()).or_insert(SvgData {
+                name: name.to_string(),
+                size: 0,
+            });
+            entry.size += size;
         }
     }
-
-    let result = serde_json::to_string(&data);
-    result.map_err(|_| AppError::GetJsonSourceError)
+    Ok(data)
 }
 
 #[get("/")]
@@ -364,9 +368,9 @@ async fn index() -> Result<(ContentType, String), AppError> {
             return Err(AppError::GraphQLError);
         }
     };
-    let data = &get_json(&stats)?;
+    let data = get_json(&stats)?;
     // 例として、SVGデータを動的に生成する関数を呼び出します。
-    let svg_data = create_bar_chart(data, 300)?;
+    let svg_data = create_bar_chart(&data, 300)?;
 
     // 生成されたSVGデータを返す。
     Ok((ContentType::SVG, svg_data))
