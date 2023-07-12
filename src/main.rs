@@ -235,7 +235,7 @@ fn create_definitions() -> Definitions {
     defs
 }
 
-fn create_bar_chart(data: &HashMap<String, SvgData>, width: i32) -> Result<String, AppError> {
+fn create_svg(data: &Vec<SvgData>, width: i32) -> Result<String, AppError> {
     // 個々の棒グラフの高さを20に固定する。
     let bar_height = 20;
 
@@ -248,32 +248,28 @@ fn create_bar_chart(data: &HashMap<String, SvgData>, width: i32) -> Result<Strin
 
     document = document.add(defs);
 
-    // jsonの横幅を加工した新しいjsonデータratio_jsonを作成する
-    // ratio_jsonの各要素の値はjsonの全要素の値の合計に対する割合となる
-    let mut ratio_json = serde_json::Map::new();
-
-    let mut sum = 0;
-    for (_, svg_data) in data {
-        sum += svg_data.size;
-    }
-
-    for (language, svg_data) in data {
-        let ratio = svg_data.size as f64 / sum as f64;
-        ratio_json.insert(language.to_string(), serde_json::Value::from(ratio));
-    }
-    // Mapで作成したratio_jsonをserde_json::Valueに変換する
-    let ratio_json = serde_json::Value::from(ratio_json);
-    let ration_json_map = to_map(&ratio_json)?;
+    let sum: f64 = data.iter().map(|d| d.size).sum();
+    let data = data
+        .into_iter()
+        .map(|d| {
+            let ratio = d.size / sum;
+            let new_data = SvgData {
+                name: d.name.to_string(),
+                size: ratio,
+            };
+            new_data
+        })
+        .collect::<Vec<SvgData>>();
 
     let mut y = 0;
     let mut color_manager = GradientColorManager::new();
-    for (language, size) in ration_json_map {
+    for svg_data in data {
         let rect = Rectangle::new()
             .set("x", 100) // テキストの分だけ棒グラフを右に移動
             .set("y", y)
             .set("rx", 5)
             .set("ry", 5)
-            .set("width", size.to_float()? as f64 * 200.0)
+            .set("width", svg_data.size * 200.0)
             .set("height", 20) // 高さを調整
             .set("fill", format!("url(#{})", color_manager.next()));
         document = document.add(rect);
@@ -281,7 +277,7 @@ fn create_bar_chart(data: &HashMap<String, SvgData>, width: i32) -> Result<Strin
         let text = Text::new()
             .set("x", 0)
             .set("y", y + 15) // テキストを棒グラフの中央に配置
-            .add(svg::node::Text::new(language));
+            .add(svg::node::Text::new(svg_data.name));
         document = document.add(text);
 
         y += 30; // 間隔を調整
@@ -302,12 +298,13 @@ fn create_bar_chart(data: &HashMap<String, SvgData>, width: i32) -> Result<Strin
     Ok(document.to_string())
 }
 
+#[derive(Debug)]
 struct SvgData {
     name: String,
-    size: i64,
+    size: f64,
 }
 
-fn get_json(stats: &ResponseData) -> Result<HashMap<String, SvgData>, AppError> {
+fn convert_to_svg_data(stats: &ResponseData) -> Result<HashMap<String, SvgData>, AppError> {
     let mut data: HashMap<String, SvgData> = HashMap::new();
 
     let viewer = &stats.viewer;
@@ -335,7 +332,7 @@ fn get_json(stats: &ResponseData) -> Result<HashMap<String, SvgData>, AppError> 
 
         for repo_lang in repo_langs {
             let repo_lang = repo_lang.as_ref().ok_or(AppError::JsonPublishFailure)?;
-            let size = repo_lang.size;
+            let size = repo_lang.size as f64;
             let name = &repo_lang.node.name;
 
             if name == "HTML" {
@@ -350,35 +347,12 @@ fn get_json(stats: &ResponseData) -> Result<HashMap<String, SvgData>, AppError> 
 
             let entry = data.entry(name.to_string()).or_insert(SvgData {
                 name: name.to_string(),
-                size: 0,
+                size: 0.0,
             });
             entry.size += size;
         }
     }
     Ok(data)
-}
-
-#[get("/")]
-async fn index() -> Result<(ContentType, String), AppError> {
-    let response = get_github_summary().await;
-    let stats = match response {
-        Ok(res) => res,
-        Err(e) => {
-            println!("error: {}", e);
-            return Err(AppError::GraphQLError);
-        }
-    };
-    let data = get_json(&stats)?;
-    // 例として、SVGデータを動的に生成する関数を呼び出します。
-    let svg_data = create_bar_chart(&data, 300)?;
-
-    // 生成されたSVGデータを返す。
-    Ok((ContentType::SVG, svg_data))
-}
-
-#[launch]
-fn rocket() -> _ {
-    rocket::build().mount("/", routes![index])
 }
 
 #[derive(Deserialize)]
@@ -402,4 +376,26 @@ async fn get_github_summary() -> Result<github_stats::ResponseData, Box<dyn std:
     let result: GraphQLResponse = serde_json::from_str(&body_text)?;
 
     Ok(result.data)
+}
+
+#[get("/")]
+async fn index() -> Result<(ContentType, String), AppError> {
+    let github_summary = get_github_summary()
+        .await
+        .map_err(|_| AppError::GraphQLError)?;
+
+    let data = convert_to_svg_data(&github_summary)?;
+    let mut data: Vec<SvgData> = data.into_iter().map(|(_, v)| v).collect();
+    data.sort_by(|a, b| b.size.partial_cmp(&a.size).unwrap());
+    data.truncate(10);
+    println!("data: {:?}", data);
+
+    let svg_data = create_svg(&data, 300)?;
+
+    Ok((ContentType::SVG, svg_data))
+}
+
+#[launch]
+fn rocket() -> _ {
+    rocket::build().mount("/", routes![index])
 }
