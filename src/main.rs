@@ -5,6 +5,7 @@ extern crate rocket;
 
 use crate::query::github_stats;
 use graphql_client::GraphQLQuery;
+use query::github_stats::ResponseData;
 use query::GithubStats;
 use reqwest::Client;
 use rocket::http::{ContentType, Status};
@@ -28,6 +29,7 @@ enum AppError {
     JsonCreateFailure,
     JsonExtractValueFailure,
     JsonPublishFailure,
+    GraphQLError,
 }
 
 trait JsonValueExtension {
@@ -305,38 +307,67 @@ fn create_bar_chart(data: &str, width: i32) -> Result<String, AppError> {
 
 /// データを取得する関数
 /// TODO: あとでGitHubのGraphQL APIを呼び出して実際のデータを取得する
-fn get_json() -> Result<String, AppError> {
-    let mut data = HashMap::new();
-    data.insert("typescript", 120);
-    data.insert("elm", 30);
-    data.insert("rust", 60);
-    data.insert("golang", 105);
-    data.insert("javascript", 35);
-    data.insert("css/scss/sass", 20);
-    data.insert("python", 70);
-    data.insert("scala", 55);
-    data.insert("haskell", 45);
-    data.insert("kotlin", 25);
+fn get_json(stats: &ResponseData) -> Result<String, AppError> {
+    // 引数statsを元にHashMapを作成する。HashMapの構成は以下の通り。key: 言語名、value: 言語のサイズ
+
+    let mut data: HashMap<&String, i64> = HashMap::new();
+
+    let viewer = &stats.viewer;
+    let repositories = viewer
+        .repositories
+        .edges
+        .as_ref()
+        .ok_or(AppError::JsonPublishFailure)?;
+
+    for repo in repositories {
+        let repo_node = repo
+            .as_ref()
+            .ok_or(AppError::JsonPublishFailure)?
+            .node
+            .as_ref()
+            .ok_or(AppError::JsonPublishFailure)?;
+
+        let repo_langs = repo_node
+            .languages
+            .as_ref()
+            .ok_or(AppError::JsonPublishFailure)?
+            .edges
+            .as_ref()
+            .ok_or(AppError::JsonPublishFailure)?;
+
+        for repo_lang in repo_langs {
+            let repo_lang = repo_lang.as_ref().ok_or(AppError::JsonPublishFailure)?;
+            let size = repo_lang.size;
+            let name = &repo_lang.node.name;
+            let _color = repo_lang
+                .node
+                .color
+                .as_ref()
+                .ok_or(AppError::JsonPublishFailure)?;
+
+            let entry = data.entry(name).or_insert(0);
+            *entry += size;
+        }
+    }
+
     let result = serde_json::to_string(&data);
     result.map_err(|_| AppError::GetJsonSourceError)
 }
 
 #[get("/")]
 async fn index() -> Result<(ContentType, String), AppError> {
-    info!("HELLO");
-    println!("call git summary!!!!!1");
-    let data = &get_json()?;
-    // 例として、SVGデータを動的に生成する関数を呼び出します。
-    let svg_data = create_bar_chart(data, 300)?;
-    println!("call git summary!!!!!2");
-    let feature = git_summary().await;
-    match feature {
-        Ok(_) => {}
+    let response = get_github_summary().await;
+    let stats = match response {
+        Ok(res) => res,
         Err(e) => {
             println!("error: {}", e);
+            return Err(AppError::GraphQLError);
         }
-    }
-    println!("call git summary!!!!!3");
+    };
+    let data = &get_json(&stats)?;
+    // 例として、SVGデータを動的に生成する関数を呼び出します。
+    let svg_data = create_bar_chart(data, 300)?;
+
     // 生成されたSVGデータを返す。
     Ok((ContentType::SVG, svg_data))
 }
@@ -346,12 +377,12 @@ fn rocket() -> _ {
     rocket::build().mount("/", routes![index])
 }
 
-#[derive(Debug, Deserialize)]
-struct GraphQLResponse<T> {
-    data: T,
+#[derive(Deserialize)]
+struct GraphQLResponse {
+    data: github_stats::ResponseData,
 }
 
-async fn git_summary() -> Result<(), Box<dyn std::error::Error>> {
+async fn get_github_summary() -> Result<github_stats::ResponseData, Box<dyn std::error::Error>> {
     let token = env::var("GITHUB_TOKEN").expect("GITHUB_TOKEN is not set");
     let client = Client::builder().user_agent("MyApp/0.1").build()?;
     let query = GithubStats::build_query(query::github_stats::Variables {});
@@ -363,12 +394,8 @@ async fn git_summary() -> Result<(), Box<dyn std::error::Error>> {
         .send()
         .await?;
 
-    let body = response.text().await?;
-    println!("Response body: {}", body);
+    let body_text = response.text().await?;
+    let result: GraphQLResponse = serde_json::from_str(&body_text)?;
 
-    let result: GraphQLResponse<github_stats::ResponseData> = serde_json::from_str(&body)?;
-    let edges = result.data.viewer.repositories.edges.unwrap();
-    println!("edge size: {}", edges.len());
-
-    Ok(())
+    Ok(result.data)
 }
