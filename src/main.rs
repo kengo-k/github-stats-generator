@@ -77,164 +77,6 @@ impl<'r> Responder<'r, 'static> for AppError {
     }
 }
 
-struct GradientVector {
-    x1: i32,
-    y1: i32,
-    x2: i32,
-    y2: i32,
-}
-
-impl GradientVector {
-    const TOP_LEFT_BOTTOM_RIGHT: GradientVector = Self {
-        x1: 0,
-        y1: 0,
-        x2: 1,
-        y2: 1,
-    };
-}
-
-struct RGB(i32, i32, i32);
-
-impl RGB {
-    fn to_hex_string(&self) -> String {
-        format!("#{:02X}{:02X}{:02X}", self.0, self.1, self.2)
-    }
-
-    fn adjust_brightness(&self, percentage: f32) -> Self {
-        let ratio = (100.0 + percentage) / 100.0;
-        Self(
-            (self.0 as f32 * ratio).max(0.0).min(255.0) as i32,
-            (self.1 as f32 * ratio).max(0.0).min(255.0) as i32,
-            (self.2 as f32 * ratio).max(0.0).min(255.0) as i32,
-        )
-    }
-}
-
-struct GradientColor {
-    id: &'static str,
-    rgb: RGB,
-}
-
-impl GradientColor {
-    const BLUE: GradientColor = Self {
-        id: "blue",
-        rgb: RGB(124, 181, 236),
-    };
-    const GRAY: GradientColor = Self {
-        id: "gray",
-        rgb: RGB(67, 67, 72),
-    };
-    const GREEN: GradientColor = Self {
-        id: "green",
-        rgb: RGB(144, 237, 125),
-    };
-    const ORANGE: GradientColor = Self {
-        id: "orange",
-        rgb: RGB(247, 163, 92),
-    };
-    const PURPLE: GradientColor = Self {
-        id: "purple",
-        rgb: RGB(128, 133, 233),
-    };
-    const PINK: GradientColor = Self {
-        id: "pink",
-        rgb: RGB(241, 92, 128),
-    };
-    const YELLOW: GradientColor = Self {
-        id: "yellow",
-        rgb: RGB(228, 211, 84),
-    };
-    const CYAN: GradientColor = Self {
-        id: "cyan",
-        rgb: RGB(43, 144, 143),
-    };
-    const RED: GradientColor = Self {
-        id: "red",
-        rgb: RGB(244, 91, 91),
-    };
-    const TURQUOISE: GradientColor = Self {
-        id: "turquoise",
-        rgb: RGB(145, 232, 225),
-    };
-
-    const ALL_COLORS: [GradientColor; 10] = [
-        Self::BLUE,
-        Self::GRAY,
-        Self::GREEN,
-        Self::ORANGE,
-        Self::PURPLE,
-        Self::PINK,
-        Self::YELLOW,
-        Self::CYAN,
-        Self::RED,
-        Self::TURQUOISE,
-    ];
-}
-
-trait LinearGraditionExtension {
-    fn set_gradient_vector(self, gv: &GradientVector) -> Self;
-    fn set_gradient_color(self, gc: &GradientColor) -> Self;
-}
-
-impl LinearGraditionExtension for LinearGradient {
-    fn set_gradient_vector(self, gv: &GradientVector) -> Self {
-        self.set("x1", format!("{}", gv.x1))
-            .set("y1", format!("{}", gv.y1))
-            .set("x2", format!("{}", gv.x2))
-            .set("y2", format!("{}", gv.y2))
-    }
-    fn set_gradient_color(self, gc: &GradientColor) -> Self {
-        let from = Stop::new()
-            .set("offset", "0%")
-            .set("stop-color", gc.rgb.to_hex_string());
-        let to = Stop::new().set("offset", "100%").set(
-            "stop-color",
-            gc.rgb.adjust_brightness(-50.0).to_hex_string(),
-        );
-        self.add(from).add(to)
-    }
-}
-
-struct GradientColorManager {
-    index: i32,
-    length: usize,
-}
-
-impl GradientColorManager {
-    pub fn new() -> Self {
-        Self {
-            index: 0,
-            length: GradientColor::ALL_COLORS.len(),
-        }
-    }
-    pub fn next(&mut self) -> String {
-        let mut i = self.index;
-        let color = GradientColor::ALL_COLORS.get(i as usize);
-        i += 1;
-        if i == self.length as i32 {
-            i = 0;
-        }
-        self.index = i;
-        match color {
-            Some(c) => c.id.to_string(),
-            None => String::from("blue"),
-        }
-    }
-}
-
-fn create_definitions() -> Definitions {
-    let mut defs = Definitions::new();
-    // TODO for_eachに直してみたい
-    for c in &GradientColor::ALL_COLORS {
-        let grad = LinearGradient::new()
-            .set("id", c.id)
-            .set_gradient_vector(&GradientVector::TOP_LEFT_BOTTOM_RIGHT)
-            .set_gradient_color(c);
-        defs = defs.add(grad);
-    }
-    defs
-}
-
 fn create_svg(data: &Vec<SvgData>, width: i32) -> Result<String, AppError> {
     // 個々の棒グラフの高さを20に固定する。
     let bar_height = 20;
@@ -244,9 +86,6 @@ fn create_svg(data: &Vec<SvgData>, width: i32) -> Result<String, AppError> {
     // 引数で指定されたwidthを持つSVGを生成する。
     // ただし、高さはデータの数に応じて自動的に決定する。
     let mut document = Document::new().set("viewBox", (0, 0, width, 500));
-    let defs = create_definitions();
-
-    document = document.add(defs);
 
     let sum: f64 = data.iter().map(|d| d.size).sum::<i64>() as f64;
     let data = data
@@ -256,6 +95,7 @@ fn create_svg(data: &Vec<SvgData>, width: i32) -> Result<String, AppError> {
             let new_data = SvgData {
                 name: d.name.to_string(),
                 size: d.size,
+                color: d.color.to_string(),
                 ratio,
             };
             new_data
@@ -263,7 +103,6 @@ fn create_svg(data: &Vec<SvgData>, width: i32) -> Result<String, AppError> {
         .collect::<Vec<SvgData>>();
 
     let mut y = 0;
-    let mut color_manager = GradientColorManager::new();
     for svg_data in data {
         let rect = Rectangle::new()
             .set("x", 100) // テキストの分だけ棒グラフを右に移動
@@ -272,7 +111,7 @@ fn create_svg(data: &Vec<SvgData>, width: i32) -> Result<String, AppError> {
             .set("ry", 5)
             .set("width", svg_data.ratio * 200.0)
             .set("height", 20) // 高さを調整
-            .set("fill", format!("url(#{})", color_manager.next()));
+            .set("fill", format!("{}", svg_data.color));
         document = document.add(rect);
 
         let text = Text::new()
@@ -307,6 +146,7 @@ struct SvgData {
     name: String,
     size: i64,
     ratio: f64,
+    color: String,
 }
 
 fn convert_to_svg_data(stats: &ResponseData) -> Result<HashMap<String, SvgData>, AppError> {
@@ -344,7 +184,7 @@ fn convert_to_svg_data(stats: &ResponseData) -> Result<HashMap<String, SvgData>,
                 continue;
             }
 
-            let _color = repo_lang
+            let color = repo_lang
                 .node
                 .color
                 .as_ref()
@@ -354,6 +194,7 @@ fn convert_to_svg_data(stats: &ResponseData) -> Result<HashMap<String, SvgData>,
                 name: name.to_string(),
                 size: 0,
                 ratio: 0.0,
+                color: color.to_string(),
             });
             entry.size += size;
         }
