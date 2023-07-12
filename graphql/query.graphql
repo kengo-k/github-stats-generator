@@ -1,19 +1,20 @@
 query GithubStats {
-    viewer {
-        repositories(first: 100) {
-          edges {
-            node {
-              name
-              languages(first: 100) {
-                edges {
-                  size
-                  node {
-                    name
-                  }
-                }
+  viewer {
+    repositories(first: 100) {
+      edges {
+        node {
+          name
+          languages(first: 100) {
+            edges {
+              size
+              node {
+                name
+                color
               }
             }
           }
         }
+      }
     }
+  }
 }
