@@ -248,14 +248,15 @@ fn create_svg(data: &Vec<SvgData>, width: i32) -> Result<String, AppError> {
 
     document = document.add(defs);
 
-    let sum: f64 = data.iter().map(|d| d.size).sum();
+    let sum: f64 = data.iter().map(|d| d.size).sum::<i64>() as f64;
     let data = data
         .into_iter()
         .map(|d| {
-            let ratio = d.size / sum;
+            let ratio = d.size as f64 / sum;
             let new_data = SvgData {
                 name: d.name.to_string(),
-                size: ratio,
+                size: d.size,
+                ratio,
             };
             new_data
         })
@@ -269,7 +270,7 @@ fn create_svg(data: &Vec<SvgData>, width: i32) -> Result<String, AppError> {
             .set("y", y)
             .set("rx", 5)
             .set("ry", 5)
-            .set("width", svg_data.size * 200.0)
+            .set("width", svg_data.ratio * 200.0)
             .set("height", 20) // 高さを調整
             .set("fill", format!("url(#{})", color_manager.next()));
         document = document.add(rect);
@@ -277,7 +278,10 @@ fn create_svg(data: &Vec<SvgData>, width: i32) -> Result<String, AppError> {
         let text = Text::new()
             .set("x", 0)
             .set("y", y + 15) // テキストを棒グラフの中央に配置
-            .add(svg::node::Text::new(svg_data.name));
+            .add(svg::node::Text::new(format!(
+                "{}({})",
+                svg_data.name, svg_data.size
+            )));
         document = document.add(text);
 
         y += 30; // 間隔を調整
@@ -301,7 +305,8 @@ fn create_svg(data: &Vec<SvgData>, width: i32) -> Result<String, AppError> {
 #[derive(Debug)]
 struct SvgData {
     name: String,
-    size: f64,
+    size: i64,
+    ratio: f64,
 }
 
 fn convert_to_svg_data(stats: &ResponseData) -> Result<HashMap<String, SvgData>, AppError> {
@@ -332,7 +337,7 @@ fn convert_to_svg_data(stats: &ResponseData) -> Result<HashMap<String, SvgData>,
 
         for repo_lang in repo_langs {
             let repo_lang = repo_lang.as_ref().ok_or(AppError::JsonPublishFailure)?;
-            let size = repo_lang.size as f64;
+            let size = repo_lang.size;
             let name = &repo_lang.node.name;
 
             if name == "HTML" {
@@ -347,7 +352,8 @@ fn convert_to_svg_data(stats: &ResponseData) -> Result<HashMap<String, SvgData>,
 
             let entry = data.entry(name.to_string()).or_insert(SvgData {
                 name: name.to_string(),
-                size: 0.0,
+                size: 0,
+                ratio: 0.0,
             });
             entry.size += size;
         }
