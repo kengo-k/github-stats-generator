@@ -9,7 +9,6 @@ use query::github_stats::ResponseData;
 use query::GithubStats;
 use reqwest::Client;
 use rocket::http::{ContentType, Status};
-use rocket::info;
 use rocket::response::Responder;
 use rocket::{response, Request, Response};
 use serde::Deserialize;
@@ -20,7 +19,7 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::io::Cursor;
 use std::string::ToString;
-use svg::node::element::{Definitions, LinearGradient, Rectangle, Stop, Text};
+use svg::node::element::{Rectangle, Text};
 use svg::Document;
 
 #[derive(Debug)]
