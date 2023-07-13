@@ -1,8 +1,7 @@
+mod convert;
 mod fetch;
 mod generated;
 
-use generated::query::github_stats::ResponseData;
-use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
 use std::string::ToString;
@@ -10,7 +9,7 @@ use svg::node::element::{Rectangle, Text};
 use svg::Document;
 
 #[derive(Debug)]
-enum AppError {
+pub enum AppError {
     JsonCreateFailure,
     JsonExtractValueFailure,
     JsonPublishFailure,
@@ -48,7 +47,7 @@ fn to_map(
     }
 }
 
-fn create_svg(data: &Vec<SvgData>, width: i32) -> Result<String, AppError> {
+fn create_svg(data: &Vec<convert::SvgData>, width: i32) -> Result<String, AppError> {
     // 個々の棒グラフの高さを20に固定する。
     let bar_height = 20;
 
@@ -63,7 +62,7 @@ fn create_svg(data: &Vec<SvgData>, width: i32) -> Result<String, AppError> {
         .into_iter()
         .map(|d| {
             let ratio = d.size as f64 / sum;
-            let new_data = SvgData {
+            let new_data = convert::SvgData {
                 name: d.name.to_string(),
                 size: d.size,
                 color: d.color.to_string(),
@@ -71,7 +70,7 @@ fn create_svg(data: &Vec<SvgData>, width: i32) -> Result<String, AppError> {
             };
             new_data
         })
-        .collect::<Vec<SvgData>>();
+        .collect::<Vec<convert::SvgData>>();
 
     let mut y = 0;
     for svg_data in data {
@@ -100,75 +99,14 @@ fn create_svg(data: &Vec<SvgData>, width: i32) -> Result<String, AppError> {
     Ok(document.to_string())
 }
 
-#[derive(Debug)]
-struct SvgData {
-    name: String,
-    size: i64,
-    ratio: f64,
-    color: String,
-}
-
-fn convert_to_svg_data(stats: &ResponseData) -> Result<HashMap<String, SvgData>, AppError> {
-    let mut data: HashMap<String, SvgData> = HashMap::new();
-
-    let viewer = &stats.viewer;
-    let repositories = viewer
-        .repositories
-        .edges
-        .as_ref()
-        .ok_or(AppError::JsonPublishFailure)?;
-
-    for repo in repositories {
-        let repo_node = repo
-            .as_ref()
-            .ok_or(AppError::JsonPublishFailure)?
-            .node
-            .as_ref()
-            .ok_or(AppError::JsonPublishFailure)?;
-
-        let repo_langs = repo_node
-            .languages
-            .as_ref()
-            .ok_or(AppError::JsonPublishFailure)?
-            .edges
-            .as_ref()
-            .ok_or(AppError::JsonPublishFailure)?;
-
-        for repo_lang in repo_langs {
-            let repo_lang = repo_lang.as_ref().ok_or(AppError::JsonPublishFailure)?;
-            let size = repo_lang.size;
-            let name = &repo_lang.node.name;
-
-            if name == "HTML" {
-                continue;
-            }
-
-            let color = repo_lang
-                .node
-                .color
-                .as_ref()
-                .ok_or(AppError::JsonPublishFailure)?;
-
-            let entry = data.entry(name.to_string()).or_insert(SvgData {
-                name: name.to_string(),
-                size: 0,
-                ratio: 0.0,
-                color: color.to_string(),
-            });
-            entry.size += size;
-        }
-    }
-    Ok(data)
-}
-
 #[tokio::main]
 async fn main() -> Result<(), AppError> {
     let github_summary = fetch::get_github_summary()
         .await
         .map_err(|_| AppError::GraphQLError)?;
 
-    let data = convert_to_svg_data(&github_summary)?;
-    let mut data: Vec<SvgData> = data.into_iter().map(|(_, v)| v).collect();
+    let data = convert::convert_to_svg_data(&github_summary)?;
+    let mut data: Vec<convert::SvgData> = data.into_iter().map(|(_, v)| v).collect();
     data.sort_by(|a, b| b.size.partial_cmp(&a.size).unwrap());
     data.truncate(10);
 
