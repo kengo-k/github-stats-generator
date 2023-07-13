@@ -36,22 +36,11 @@ impl From<serde_json::Error> for AppError {
     }
 }
 
-fn to_map(
-    json: &serde_json::Value,
-) -> Result<&serde_json::Map<String, serde_json::Value>, AppError> {
-    match json.as_object() {
-        Some(value) => Ok(value),
-        None => {
-            return Err(AppError::JsonCreateFailure);
-        }
-    }
-}
-
 fn create_svg(data: &Vec<convert::SvgData>, width: i32) -> Result<String, AppError> {
     // 個々の棒グラフの高さを20に固定する。
     let bar_height = 20;
 
-    let view_height = data.len() as i32 * (bar_height + 10);
+    let _view_height = data.len() as i32 * (bar_height + 10);
 
     // 引数で指定されたwidthを持つSVGを生成する。
     // ただし、高さはデータの数に応じて自動的に決定する。
