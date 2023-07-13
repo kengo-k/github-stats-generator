@@ -1,12 +1,12 @@
-mod query;
+mod generated;
 
 #[macro_use]
 extern crate rocket;
 
-use crate::query::github_stats;
+use generated::query::github_stats;
+use generated::query::github_stats::ResponseData;
+use generated::query::GithubStats;
 use graphql_client::GraphQLQuery;
-use query::github_stats::ResponseData;
-use query::GithubStats;
 use reqwest::Client;
 use rocket::http::{ContentType, Status};
 use rocket::response::Responder;
@@ -209,7 +209,7 @@ struct GraphQLResponse {
 async fn get_github_summary() -> Result<github_stats::ResponseData, Box<dyn std::error::Error>> {
     let token = env::var("GITHUB_TOKEN").expect("GITHUB_TOKEN is not set");
     let client = Client::builder().user_agent("MyApp/0.1").build()?;
-    let query = GithubStats::build_query(query::github_stats::Variables {});
+    let query = GithubStats::build_query(generated::query::github_stats::Variables {});
 
     let response = client
         .post("https://api.github.com/graphql")
