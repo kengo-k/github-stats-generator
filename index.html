@@ -1,37 +1,21 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>SVG Test</title>
-    <script src="main.js"></script>
     <style>
       div {
-        /* 薄いグレーで角に少し丸みをつけたボーダーをつける */
         border: 1px solid #ccc;
         border-radius: 4px;
-        /* ボーダーの右下にドロップシャドウをつける */
         box-shadow: 1px 1px 1px rgba(0, 0, 0, 0.2);
       }
-      div.svg1 {
-        /* border: 1px solid black; */
-        width: 300px;
-
-        padding: 2px;
-      }
-      div.svg2 {
+      div.svg {
         width: 300px;
         height: 300px;
       }
     </style>
   </head>
   <body>
-    svg by api: <br />
-    <div class="svg1">
-      <img id="svgImage" src="http://127.0.0.1:8000" alt="SVG image" />
-    </div>
-    <hr />
-    svg by file: <br />
-    <div class="svg2">
-      <img id="svgImage2" src="image.svg" alt="SVG image" />
+    <div class="svg">
+      <img id="svgImage" src="image.svg" alt="SVG image" />
     </div>
   </body>
 </html>
