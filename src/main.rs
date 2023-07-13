@@ -2,14 +2,9 @@ mod fetch;
 mod generated;
 
 use generated::query::github_stats::ResponseData;
-use rocket::http::{ContentType, Status};
-use rocket::response::Responder;
-use rocket::{response, Request, Response};
-use serde_json::json;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
-use std::io::Cursor;
 use std::string::ToString;
 use svg::node::element::{Rectangle, Text};
 use svg::Document;
@@ -50,20 +45,6 @@ fn to_map(
         None => {
             return Err(AppError::JsonCreateFailure);
         }
-    }
-}
-
-#[rocket::async_trait]
-impl<'r> Responder<'r, 'static> for AppError {
-    fn respond_to(self, _: &'r Request<'_>) -> response::Result<'static> {
-        let body = json!({ "error": "failure" }).to_string();
-        let len = body.len();
-
-        Response::build()
-            .status(Status::BadRequest)
-            .header(ContentType::JSON)
-            .sized_body(len, Cursor::new(body))
-            .ok()
     }
 }
 
