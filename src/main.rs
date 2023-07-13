@@ -1,8 +1,5 @@
 mod generated;
 
-#[macro_use]
-extern crate rocket;
-
 use generated::query::github_stats;
 use generated::query::github_stats::ResponseData;
 use generated::query::GithubStats;
@@ -125,18 +122,6 @@ fn create_svg(data: &Vec<SvgData>, width: i32) -> Result<String, AppError> {
         y += 30; // 間隔を調整
     }
 
-    // SVG仕様確認用に直接SVGファイル出力しておく。
-    // SVGファイルを直接編集して表示を確認するために使う。
-    // TODO 後で消す
-    let file = File::create("image.svg");
-    let mut file = match file {
-        Ok(f) => f,
-        Err(_) => {
-            return Err(AppError::JsonPublishFailure);
-        }
-    };
-    let _ = file.write_all(document.to_string().as_bytes());
-
     Ok(document.to_string())
 }
 
@@ -224,8 +209,8 @@ async fn get_github_summary() -> Result<github_stats::ResponseData, Box<dyn std:
     Ok(result.data)
 }
 
-#[get("/")]
-async fn index() -> Result<(ContentType, String), AppError> {
+#[tokio::main]
+async fn main() -> Result<(), AppError> {
     let github_summary = get_github_summary()
         .await
         .map_err(|_| AppError::GraphQLError)?;
@@ -234,14 +219,20 @@ async fn index() -> Result<(ContentType, String), AppError> {
     let mut data: Vec<SvgData> = data.into_iter().map(|(_, v)| v).collect();
     data.sort_by(|a, b| b.size.partial_cmp(&a.size).unwrap());
     data.truncate(10);
-    println!("data: {:?}", data);
 
     let svg_data = create_svg(&data, 300)?;
 
-    Ok((ContentType::SVG, svg_data))
-}
+    // SVG仕様確認用に直接SVGファイル出力しておく。
+    // SVGファイルを直接編集して表示を確認するために使う。
+    // TODO 後で消す
+    let file = File::create("image.svg");
+    let mut file = match file {
+        Ok(f) => f,
+        Err(_) => {
+            return Err(AppError::JsonPublishFailure);
+        }
+    };
+    let _ = file.write_all(svg_data.as_bytes());
 
-#[launch]
-fn rocket() -> _ {
-    rocket::build().mount("/", routes![index])
+    Ok(())
 }
