@@ -1,17 +1,12 @@
+mod fetch;
 mod generated;
 
-use generated::query::github_stats;
 use generated::query::github_stats::ResponseData;
-use generated::query::GithubStats;
-use graphql_client::GraphQLQuery;
-use reqwest::Client;
 use rocket::http::{ContentType, Status};
 use rocket::response::Responder;
 use rocket::{response, Request, Response};
-use serde::Deserialize;
 use serde_json::json;
 use std::collections::HashMap;
-use std::env;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::Cursor;
@@ -21,7 +16,6 @@ use svg::Document;
 
 #[derive(Debug)]
 enum AppError {
-    GetJsonSourceError, // SVG生成の元になる入力データの取得に失敗したことを示すエラー
     JsonCreateFailure,
     JsonExtractValueFailure,
     JsonPublishFailure,
@@ -186,32 +180,9 @@ fn convert_to_svg_data(stats: &ResponseData) -> Result<HashMap<String, SvgData>,
     Ok(data)
 }
 
-#[derive(Deserialize)]
-struct GraphQLResponse {
-    data: github_stats::ResponseData,
-}
-
-async fn get_github_summary() -> Result<github_stats::ResponseData, Box<dyn std::error::Error>> {
-    let token = env::var("GITHUB_TOKEN").expect("GITHUB_TOKEN is not set");
-    let client = Client::builder().user_agent("MyApp/0.1").build()?;
-    let query = GithubStats::build_query(generated::query::github_stats::Variables {});
-
-    let response = client
-        .post("https://api.github.com/graphql")
-        .bearer_auth(token)
-        .json(&query)
-        .send()
-        .await?;
-
-    let body_text = response.text().await?;
-    let result: GraphQLResponse = serde_json::from_str(&body_text)?;
-
-    Ok(result.data)
-}
-
 #[tokio::main]
 async fn main() -> Result<(), AppError> {
-    let github_summary = get_github_summary()
+    let github_summary = fetch::get_github_summary()
         .await
         .map_err(|_| AppError::GraphQLError)?;
 
@@ -221,10 +192,6 @@ async fn main() -> Result<(), AppError> {
     data.truncate(10);
 
     let svg_data = create_svg(&data, 300)?;
-
-    // SVG仕様確認用に直接SVGファイル出力しておく。
-    // SVGファイルを直接編集して表示を確認するために使う。
-    // TODO 後で消す
     let file = File::create("image.svg");
     let mut file = match file {
         Ok(f) => f,
