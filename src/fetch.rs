@@ -6,7 +6,7 @@ use serde::Deserialize;
 use std::env;
 
 #[derive(Deserialize)]
-pub struct GraphQLResponse {
+struct GraphQLResponse {
     pub data: ResponseData,
 }
 
@@ -23,7 +23,7 @@ pub async fn get_github_summary() -> Result<ResponseData, Box<dyn std::error::Er
         .await?;
 
     let body_text = response.text().await?;
-    let result: GraphQLResponse = serde_json::from_str(&body_text)?;
+    let response: GraphQLResponse = serde_json::from_str(&body_text)?;
 
-    Ok(result.data)
+    Ok(response.data)
 }
