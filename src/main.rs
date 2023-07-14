@@ -1,5 +1,5 @@
 mod convert;
-mod fetch;
+mod graphql;
 mod generated;
 mod publish;
 
@@ -16,7 +16,7 @@ pub enum AppError {
 
 #[tokio::main]
 async fn main() -> Result<(), AppError> {
-    let github_summary = fetch::get_github_summary()
+    let github_summary = graphql::get_github_summary()
         .await
         .map_err(|_| AppError::GraphQLError)?;
 
