@@ -14,26 +14,6 @@ pub enum AppError {
     GraphQLError,
 }
 
-trait JsonValueExtension {
-    fn to_int(&self) -> Result<i64, AppError>;
-    fn to_float(&self) -> Result<f64, AppError>;
-}
-
-impl JsonValueExtension for serde_json::Value {
-    fn to_int(&self) -> Result<i64, AppError> {
-        self.as_i64().ok_or(AppError::JsonExtractValueFailure)
-    }
-    fn to_float(&self) -> Result<f64, AppError> {
-        self.as_f64().ok_or(AppError::JsonExtractValueFailure)
-    }
-}
-
-impl From<serde_json::Error> for AppError {
-    fn from(_: serde_json::Error) -> Self {
-        AppError::JsonCreateFailure
-    }
-}
-
 #[tokio::main]
 async fn main() -> Result<(), AppError> {
     let github_summary = fetch::get_github_summary()
