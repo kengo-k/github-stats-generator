@@ -10,7 +10,7 @@ pub struct SvgData {
     pub color: String,
 }
 
-pub fn convert_to_svg_data(stats: &ResponseData) -> Result<HashMap<String, SvgData>, AppError> {
+pub fn to_svg_data(stats: &ResponseData) -> Result<HashMap<String, SvgData>, AppError> {
     let mut data: HashMap<String, SvgData> = HashMap::new();
 
     let viewer = &stats.viewer;

@@ -1,12 +1,10 @@
 mod convert;
 mod fetch;
 mod generated;
+mod publish;
 
 use std::fs::File;
 use std::io::prelude::*;
-use std::string::ToString;
-use svg::node::element::{Rectangle, Text};
-use svg::Document;
 
 #[derive(Debug)]
 pub enum AppError {
@@ -36,70 +34,18 @@ impl From<serde_json::Error> for AppError {
     }
 }
 
-fn create_svg(data: &Vec<convert::SvgData>, width: i32) -> Result<String, AppError> {
-    // 個々の棒グラフの高さを20に固定する。
-    let bar_height = 20;
-
-    let _view_height = data.len() as i32 * (bar_height + 10);
-
-    // 引数で指定されたwidthを持つSVGを生成する。
-    // ただし、高さはデータの数に応じて自動的に決定する。
-    let mut document = Document::new().set("viewBox", (0, 0, width, 500));
-
-    let sum: f64 = data.iter().map(|d| d.size).sum::<i64>() as f64;
-    let data = data
-        .into_iter()
-        .map(|d| {
-            let ratio = d.size as f64 / sum;
-            let new_data = convert::SvgData {
-                name: d.name.to_string(),
-                size: d.size,
-                color: d.color.to_string(),
-                ratio,
-            };
-            new_data
-        })
-        .collect::<Vec<convert::SvgData>>();
-
-    let mut y = 0;
-    for svg_data in data {
-        let rect = Rectangle::new()
-            .set("x", 100) // テキストの分だけ棒グラフを右に移動
-            .set("y", y)
-            .set("rx", 5)
-            .set("ry", 5)
-            .set("width", svg_data.ratio * 200.0)
-            .set("height", 20) // 高さを調整
-            .set("fill", format!("{}", svg_data.color));
-        document = document.add(rect);
-
-        let text = Text::new()
-            .set("x", 0)
-            .set("y", y + 15) // テキストを棒グラフの中央に配置
-            .add(svg::node::Text::new(format!(
-                "{}({})",
-                svg_data.name, svg_data.size
-            )));
-        document = document.add(text);
-
-        y += 30; // 間隔を調整
-    }
-
-    Ok(document.to_string())
-}
-
 #[tokio::main]
 async fn main() -> Result<(), AppError> {
     let github_summary = fetch::get_github_summary()
         .await
         .map_err(|_| AppError::GraphQLError)?;
 
-    let data = convert::convert_to_svg_data(&github_summary)?;
+    let data = convert::to_svg_data(&github_summary)?;
     let mut data: Vec<convert::SvgData> = data.into_iter().map(|(_, v)| v).collect();
     data.sort_by(|a, b| b.size.partial_cmp(&a.size).unwrap());
     data.truncate(10);
 
-    let svg_data = create_svg(&data, 300)?;
+    let svg_data = publish::write()?;
     let file = File::create("image.svg");
     let mut file = match file {
         Ok(f) => f,
