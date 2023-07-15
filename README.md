@@ -21,5 +21,5 @@ $ graphql-client introspect-schema https://api.github.com/graphql \
 ```
 
 ```
-$ graphql-client generate -o src --schema-path graphql/schema.json graphql/query.graphql
+$ graphql-client generate -o src/generated --schema-path graphql/schema.json graphql/query.graphql
 ```
