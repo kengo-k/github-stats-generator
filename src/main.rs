@@ -23,9 +23,9 @@ async fn main() -> Result<(), AppError> {
     let data = convert::to_svg_data(&github_summary)?;
     let mut data: Vec<convert::SvgData> = data.into_iter().map(|(_, v)| v).collect();
     data.sort_by(|a, b| b.size.partial_cmp(&a.size).unwrap());
-    data.truncate(10);
+    data.truncate(8);
 
-    let svg_data = publish::write()?;
+    let svg_data = publish::write(&data)?;
     let file = File::create("image.svg");
     let mut file = match file {
         Ok(f) => f,

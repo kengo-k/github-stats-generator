@@ -41,7 +41,7 @@ pub fn to_svg_data(stats: &ResponseData) -> Result<HashMap<String, SvgData>, App
             let size = repo_lang.size;
             let name = &repo_lang.node.name;
 
-            if name == "HTML" {
+            if name == "HTML" || name == "Sass"{
                 continue;
             }
 
