@@ -1,6 +1,6 @@
 query GithubStats {
   viewer {
-    repositories(first: 100) {
+    repositories(isFork: false, first: 100) {
       edges {
         node {
           name
