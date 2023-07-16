@@ -41,7 +41,12 @@ fn create_bar_chart(lang_name: &str, ratio: f64, color: &str) -> Document {
 }
 
 fn create_top_lang_chart(data: &Vec<crate::convert::SvgData>) -> Document {
-    let mut top_lang_chart = Document::new();
+    let height = data.len() * 35;
+    let mut root = Document::new();
+    let mut top_lang_chart = Document::new()
+        .set("width", 300)
+        .set("height", height)
+        .set("viewBox", (0, 0, 300, height));
     let sum = data.iter().map(|d| d.size).sum::<i64>();
     let charts: Vec<_> = data
         .iter()
@@ -63,17 +68,14 @@ fn create_top_lang_chart(data: &Vec<crate::convert::SvgData>) -> Document {
         top_lang_chart = top_lang_chart.add(chart)
     }
 
-    top_lang_chart
+    root = root.add(top_lang_chart);
+    root
 }
 
 pub fn write(data: &Vec<crate::convert::SvgData>) -> Result<String, AppError> {
     let styles = Style::new(CSS);
     let top_lang_chart = create_top_lang_chart(data);
-    let height = data.len() * 35;
     let root = Document::new()
-        .set("width", 300)
-        .set("height", height)
-        .set("viewBox", (0, 0, 300, height))
         .add(styles)
         .add(top_lang_chart);
 
@@ -83,8 +85,8 @@ pub fn write(data: &Vec<crate::convert::SvgData>) -> Result<String, AppError> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use sxd_document::{dom, parser, Package};
-    use sxd_xpath::{evaluate_xpath, Context, Error, Factory, Value, XPath};
+    use sxd_document::{parser, Package};
+    use sxd_xpath::{Context, Factory};
 
     struct DocumentWrapper {
         package: Package,
@@ -177,7 +179,7 @@ mod tests {
             }
         }
 
-        let source = create_bar_chart("rust", 100, 9.37, "red").to_string();
+        let source = create_bar_chart("rust", 9.37, "red").to_string();
         let doc =
             DocumentWrapper::new(source.as_str()).set_namespace("ns", "http://www.w3.org/2000/svg");
 
