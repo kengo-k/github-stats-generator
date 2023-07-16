@@ -2,8 +2,12 @@ use crate::AppError;
 use svg::node::element::{Rectangle, Style, Text};
 use svg::Document;
 
-const CSS: &'static str = r#" text {
+const CSS: &'static str = r#" .top_lang_chart text {
     font: 400 11px 'Segoe UI', Ubuntu, Sans-Serif;
+}
+.title {
+    font: 600 18px 'Segoe UI', Ubuntu, Sans-Serif;
+    fill: #2f80ed;
 }"#;
 
 fn create_bar_chart(lang_name: &str, ratio: f64, color: &str) -> Document {
@@ -44,9 +48,12 @@ fn create_top_lang_chart(data: &Vec<crate::convert::SvgData>) -> Document {
     let height = data.len() * 35;
     let mut root = Document::new();
     let mut top_lang_chart = Document::new()
+        .set("y", 50)
         .set("width", 300)
         .set("height", height)
-        .set("viewBox", (0, 0, 300, height));
+        .set("viewBox", (0, 0, 300, height))
+        .set("class", "top_lang_chart")
+        ;
     let sum = data.iter().map(|d| d.size).sum::<i64>();
     let charts: Vec<_> = data
         .iter()
@@ -68,7 +75,16 @@ fn create_top_lang_chart(data: &Vec<crate::convert::SvgData>) -> Document {
         top_lang_chart = top_lang_chart.add(chart)
     }
 
-    root = root.add(top_lang_chart);
+    let title = Text::new()
+        .set("x", 20)
+        .set("y", 30)
+        .set("class", "title")
+        .add(svg::node::Text::new("Most Used Languages"));
+
+    root = root
+        .add(title)
+        .add(top_lang_chart)
+    ;
     root
 }
 
