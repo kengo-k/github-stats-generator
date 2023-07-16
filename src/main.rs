@@ -1,7 +1,7 @@
 mod convert;
 mod generated;
 mod graphql;
-mod publish;
+mod renderer;
 
 use std::fs::File;
 use std::io::prelude::*;
@@ -25,7 +25,7 @@ async fn main() -> Result<(), AppError> {
     data.sort_by(|a, b| b.size.partial_cmp(&a.size).unwrap());
     data.truncate(10);
 
-    let svg_data = publish::write(&data)?;
+    let svg_data = renderer::write(&data)?;
     let file = File::create("image.svg");
     let mut file = match file {
         Ok(f) => f,
