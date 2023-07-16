@@ -1,0 +1,12 @@
+query ListRepositories($login: String!) {
+  user(login: $login) {
+    repositories(first: 100, orderBy: { field: PUSHED_AT, direction: DESC }) {
+      nodes {
+        id
+        name
+        isPrivate
+        pushedAt
+      }
+    }
+  }
+}

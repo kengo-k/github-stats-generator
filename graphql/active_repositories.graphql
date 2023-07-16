@@ -1,0 +1,22 @@
+query ActiveRepositories(
+  $ids: [ID!]!
+  $since: GitTimestamp!
+  $until: GitTimestamp!
+) {
+  nodes(ids: $ids) {
+    __typename
+    ... on Repository {
+      name
+      defaultBranchRef {
+        target {
+          __typename
+          ... on Commit {
+            history(since: $since, until: $until) {
+              totalCount
+            }
+          }
+        }
+      }
+    }
+  }
+}
