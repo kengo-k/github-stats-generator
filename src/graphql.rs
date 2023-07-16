@@ -1,6 +1,6 @@
 use crate::generated::query::github_stats::{ResponseData, Variables};
 use crate::generated::query::GithubStats;
-use crate::AppError;
+use crate::{AppError, config};
 use graphql_client::GraphQLQuery;
 use reqwest::Client;
 use serde::Deserialize;
@@ -47,6 +47,7 @@ pub struct SvgData {
 }
 
 fn to_svg_data(stats: &ResponseData) -> Result<HashMap<String, SvgData>, AppError> {
+    let config = config::load();
     let mut data: HashMap<String, SvgData> = HashMap::new();
 
     let viewer = &stats.viewer;
@@ -77,7 +78,7 @@ fn to_svg_data(stats: &ResponseData) -> Result<HashMap<String, SvgData>, AppErro
             let size = repo_lang.size;
             let name = &repo_lang.node.name;
 
-            if name == "HTML" || name == "Sass" {
+            if config.ignore_languages.contains(name) {
                 continue;
             }
 

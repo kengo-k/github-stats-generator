@@ -1,6 +1,7 @@
 mod generated;
 mod graphql;
 mod renderer;
+mod config;
 
 use std::fs::File;
 use std::io::prelude::*;
