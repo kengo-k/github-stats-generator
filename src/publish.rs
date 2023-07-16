@@ -6,13 +6,12 @@ const CSS: &'static str = r#" text {
     font: 400 11px 'Segoe UI', Ubuntu, Sans-Serif;
 }"#;
 
-fn create_bar_chart(lang_name: &str, size: i64, ratio: f64, color: &str) -> Document {
+fn create_bar_chart(lang_name: &str, ratio: f64, color: &str) -> Document {
     const LEFT: i32 = 10;
     const BAR_TOP: f32 = 27.5;
     const BAR_HEIGHT: i32 = 8;
     const BAR_ROUND: i32 = 5;
-    let mut document = Document::new()
-        .set("width", 250);
+    let mut document = Document::new().set("width", 250);
     let text = Text::new()
         .set("x", LEFT)
         .set("y", 20)
@@ -25,8 +24,7 @@ fn create_bar_chart(lang_name: &str, size: i64, ratio: f64, color: &str) -> Docu
         .set("width", 205)
         .set("height", BAR_HEIGHT)
         .set("fill", "#ddd")
-        .set("class", "whole")
-        ;
+        .set("class", "whole");
     let ratio_rect = Rectangle::new()
         .set("x", LEFT)
         .set("y", BAR_TOP)
@@ -35,38 +33,49 @@ fn create_bar_chart(lang_name: &str, size: i64, ratio: f64, color: &str) -> Docu
         .set("width", format!("{}%", ratio))
         .set("height", BAR_HEIGHT)
         .set("fill", color)
-        .set("class", "ratio")
-        ;
+        .set("class", "ratio");
 
     document = document.add(text).add(whole_rect).add(ratio_rect);
 
     document
 }
 
-pub fn write(data: &Vec<crate::convert::SvgData>) -> Result<String, AppError> {
-    let style = Style::new(CSS);
-    let sum = &data.iter().map(|d|d.size).sum::<i64>();
-    let bars: Vec<_> = data
+fn create_top_lang_chart(data: &Vec<crate::convert::SvgData>) -> Document {
+    let mut top_lang_chart = Document::new();
+    let sum = data.iter().map(|d| d.size).sum::<i64>();
+    let charts: Vec<_> = data
         .iter()
         .enumerate()
         .map(|(i, d)| {
-            let ratio = d.size as f64 / *sum as f64 * 100.0;
-            let text = format!("{}: {}% ({}KB)", d.name.as_str(), ratio as i32, d.size / 1000);
-            let doc = create_bar_chart(text.as_str(), d.size, ratio, d.color.as_str());
+            let ratio = d.size as f64 / sum as f64 * 100.0;
+            let text = format!(
+                "{}: {}% ({}KB)",
+                d.name.as_str(),
+                ratio as i32,
+                d.size / 1000
+            );
+            let doc = create_bar_chart(text.as_str(), ratio, d.color.as_str());
             doc.set("x", 10).set("y", i * 35)
         })
-        .collect::<Vec<_>>()
-        ;
-    //let bar = create_bar_chart("HTML", 100, 59.56, "red");
-    let mut root = Document::new()
-        .set("width", 300)
-        .set("height", 285)
-        .set("viewBox", (0, 0, 300, 285))
-        .add(style);
+        .collect::<Vec<_>>();
 
-    for bar in bars {
-        root = root.add(bar);
+    for chart in charts {
+        top_lang_chart = top_lang_chart.add(chart)
     }
+
+    top_lang_chart
+}
+
+pub fn write(data: &Vec<crate::convert::SvgData>) -> Result<String, AppError> {
+    let styles = Style::new(CSS);
+    let top_lang_chart = create_top_lang_chart(data);
+    let height = data.len() * 35;
+    let root = Document::new()
+        .set("width", 300)
+        .set("height", height)
+        .set("viewBox", (0, 0, 300, height))
+        .add(styles)
+        .add(top_lang_chart);
 
     Ok(root.to_string())
 }

@@ -1,6 +1,6 @@
 mod convert;
-mod graphql;
 mod generated;
+mod graphql;
 mod publish;
 
 use std::fs::File;
@@ -23,7 +23,7 @@ async fn main() -> Result<(), AppError> {
     let data = convert::to_svg_data(&github_summary)?;
     let mut data: Vec<convert::SvgData> = data.into_iter().map(|(_, v)| v).collect();
     data.sort_by(|a, b| b.size.partial_cmp(&a.size).unwrap());
-    data.truncate(8);
+    data.truncate(10);
 
     let svg_data = publish::write(&data)?;
     let file = File::create("image.svg");
