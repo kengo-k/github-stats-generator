@@ -44,7 +44,7 @@ fn create_bar_chart(lang_name: &str, ratio: f64, color: &str) -> Document {
     document
 }
 
-fn create_top_lang_chart(data: &Vec<crate::convert::SvgData>) -> Document {
+fn create_top_lang_chart(data: &Vec<crate::graphql::SvgData>) -> Document {
     let height = data.len() * 35;
     let mut root = Document::new();
     let mut top_lang_chart = Document::new()
@@ -52,8 +52,7 @@ fn create_top_lang_chart(data: &Vec<crate::convert::SvgData>) -> Document {
         .set("width", 300)
         .set("height", height)
         .set("viewBox", (0, 0, 300, height))
-        .set("class", "top_lang_chart")
-        ;
+        .set("class", "top_lang_chart");
     let sum = data.iter().map(|d| d.size).sum::<i64>();
     let charts: Vec<_> = data
         .iter()
@@ -81,19 +80,14 @@ fn create_top_lang_chart(data: &Vec<crate::convert::SvgData>) -> Document {
         .set("class", "title")
         .add(svg::node::Text::new("Most Used Languages"));
 
-    root = root
-        .add(title)
-        .add(top_lang_chart)
-    ;
+    root = root.add(title).add(top_lang_chart);
     root
 }
 
-pub fn write(data: &Vec<crate::convert::SvgData>) -> Result<String, AppError> {
+pub fn write(data: &Vec<crate::graphql::SvgData>) -> Result<String, AppError> {
     let styles = Style::new(CSS);
     let top_lang_chart = create_top_lang_chart(data);
-    let root = Document::new()
-        .add(styles)
-        .add(top_lang_chart);
+    let root = Document::new().add(styles).add(top_lang_chart);
 
     Ok(root.to_string())
 }

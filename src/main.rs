@@ -1,4 +1,3 @@
-mod convert;
 mod generated;
 mod graphql;
 mod renderer;
@@ -16,12 +15,10 @@ pub enum AppError {
 
 #[tokio::main]
 async fn main() -> Result<(), AppError> {
-    let github_summary = graphql::get_github_summary()
+    let mut data = graphql::get_github_summary()
         .await
         .map_err(|_| AppError::GraphQLError)?;
 
-    let data = convert::to_svg_data(&github_summary)?;
-    let mut data: Vec<convert::SvgData> = data.into_iter().map(|(_, v)| v).collect();
     data.sort_by(|a, b| b.size.partial_cmp(&a.size).unwrap());
     data.truncate(10);
 
