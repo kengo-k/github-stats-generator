@@ -60,9 +60,9 @@ fn create_top_lang_chart(data: &Vec<crate::graphql::SvgData>) -> Document {
         .map(|(i, d)| {
             let ratio = d.size as f64 / sum as f64 * 100.0;
             let text = format!(
-                "{}: {}% ({}KB)",
+                "{}: {:.1}% ({}KB)",
                 d.name.as_str(),
-                ratio as i32,
+                ratio as f32,
                 d.size / 1000
             );
             let doc = create_bar_chart(text.as_str(), ratio, d.color.as_str());
