@@ -4,7 +4,6 @@ query TopLanguages {
       edges {
         node {
           name
-          stargazerCount
           languages(first: 100) {
             edges {
               size

@@ -4,7 +4,7 @@ pub mod list_repositories {
     #![allow(dead_code)]
     use std::result::Result;
     pub const OPERATION_NAME: &str = "ListRepositories";
-    pub const QUERY : & str = "query ListRepositories($login: String!) {\n  user(login: $login) {\n    repositories(first: 100, orderBy: { field: PUSHED_AT, direction: DESC }) {\n      nodes {\n        id\n        name\n        isPrivate\n        isFork\n        diskUsage\n        pushedAt\n      }\n    }\n  }\n}\n" ;
+    pub const QUERY : & str = "query ListRepositories($login: String!) {\n  user(login: $login) {\n    repositories(first: 100, orderBy: { field: PUSHED_AT, direction: DESC }) {\n      nodes {\n        id\n        name\n        isPrivate\n        isFork\n        diskUsage\n        stargazerCount\n        pushedAt\n      }\n    }\n  }\n}\n" ;
     use super::*;
     use serde::{Deserialize, Serialize};
     #[allow(dead_code)]
@@ -43,6 +43,8 @@ pub mod list_repositories {
         pub is_fork: Boolean,
         #[serde(rename = "diskUsage")]
         pub disk_usage: Option<Int>,
+        #[serde(rename = "stargazerCount")]
+        pub stargazer_count: Int,
         #[serde(rename = "pushedAt")]
         pub pushed_at: Option<DateTime>,
     }
