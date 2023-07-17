@@ -1,12 +1,12 @@
-use crate::{AppError, config};
+use crate::generated::top_languages;
+use crate::generated::top_languages::top_languages::ResponseData;
+use crate::generated::top_languages::top_languages::Variables;
+use crate::{config, AppError};
 use graphql_client::GraphQLQuery;
 use reqwest::Client;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::env;
-use crate::generated::top_languages;
-use crate::generated::top_languages::top_languages::ResponseData;
-use crate::generated::top_languages::top_languages::Variables;
 
 #[derive(Deserialize)]
 struct GraphQLResponse {
@@ -14,14 +14,14 @@ struct GraphQLResponse {
 }
 
 #[derive(Debug)]
-pub struct SvgData {
+pub struct LanguageSummary {
     pub name: String,
     pub size: i64,
     pub ratio: f64,
     pub color: String,
 }
 
-pub async fn get_github_summary() -> Result<Vec<SvgData>, AppError> {
+pub async fn get_top_languages() -> Result<Vec<LanguageSummary>, AppError> {
     let token = env::var("GITHUB_TOKEN").expect("GITHUB_TOKEN is not set");
     let client = Client::builder()
         .user_agent("MyApp/0.1")
@@ -42,14 +42,14 @@ pub async fn get_github_summary() -> Result<Vec<SvgData>, AppError> {
         serde_json::from_str(&body_text).map_err(|_| AppError::GraphQLError)?;
 
     let data = to_svg_data(&response.data)?;
-    let data: Vec<SvgData> = data.into_iter().map(|(_, v)| v).collect();
+    let data: Vec<LanguageSummary> = data.into_iter().map(|(_, v)| v).collect();
 
     Ok(data)
 }
 
-fn to_svg_data(stats: &ResponseData) -> Result<HashMap<String, SvgData>, AppError> {
+fn to_svg_data(stats: &ResponseData) -> Result<HashMap<String, LanguageSummary>, AppError> {
     let config = config::load();
-    let mut data: HashMap<String, SvgData> = HashMap::new();
+    let mut data: HashMap<String, LanguageSummary> = HashMap::new();
 
     let viewer = &stats.viewer;
     let repositories = viewer
@@ -89,7 +89,7 @@ fn to_svg_data(stats: &ResponseData) -> Result<HashMap<String, SvgData>, AppErro
                 .as_ref()
                 .ok_or(AppError::JsonPublishFailure)?;
 
-            let entry = data.entry(name.to_string()).or_insert(SvgData {
+            let entry = data.entry(name.to_string()).or_insert(LanguageSummary {
                 name: name.to_string(),
                 size: 0,
                 ratio: 0.0,

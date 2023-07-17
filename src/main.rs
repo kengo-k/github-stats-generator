@@ -1,7 +1,7 @@
+mod config;
 mod generated;
 mod graphql;
 mod renderer;
-mod config;
 
 use std::fs::File;
 use std::io::prelude::*;
@@ -17,7 +17,7 @@ pub enum AppError {
 #[tokio::main]
 async fn main() -> Result<(), AppError> {
     let config = config::load();
-    let mut data = graphql::get_github_summary()
+    let mut data = graphql::get_top_languages()
         .await
         .map_err(|_| AppError::GraphQLError)?;
 
