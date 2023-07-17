@@ -1,4 +1,4 @@
-query GithubStats {
+query TopLanguages {
   viewer {
     repositories(isFork: false, first: 100) {
       edges {

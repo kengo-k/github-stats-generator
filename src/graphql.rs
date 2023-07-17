@@ -1,11 +1,12 @@
-use crate::generated::query::github_stats::{ResponseData, Variables};
-use crate::generated::query::GithubStats;
 use crate::{AppError, config};
 use graphql_client::GraphQLQuery;
 use reqwest::Client;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::env;
+use crate::generated::top_languages;
+use crate::generated::top_languages::top_languages::ResponseData;
+use crate::generated::top_languages::top_languages::Variables;
 
 #[derive(Deserialize)]
 struct GraphQLResponse {
@@ -18,7 +19,7 @@ pub async fn get_github_summary() -> Result<Vec<SvgData>, AppError> {
         .user_agent("MyApp/0.1")
         .build()
         .map_err(|_| AppError::GraphQLError)?;
-    let query = GithubStats::build_query(Variables {});
+    let query = top_languages::TopLanguages::build_query(Variables {});
 
     let response = client
         .post("https://api.github.com/graphql")
