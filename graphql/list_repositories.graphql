@@ -5,6 +5,8 @@ query ListRepositories($login: String!) {
         id
         name
         isPrivate
+        isFork
+        diskUsage
         pushedAt
       }
     }
