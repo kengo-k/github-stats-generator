@@ -13,6 +13,14 @@ struct GraphQLResponse {
     pub data: ResponseData,
 }
 
+#[derive(Debug)]
+pub struct SvgData {
+    pub name: String,
+    pub size: i64,
+    pub ratio: f64,
+    pub color: String,
+}
+
 pub async fn get_github_summary() -> Result<Vec<SvgData>, AppError> {
     let token = env::var("GITHUB_TOKEN").expect("GITHUB_TOKEN is not set");
     let client = Client::builder()
@@ -37,14 +45,6 @@ pub async fn get_github_summary() -> Result<Vec<SvgData>, AppError> {
     let data: Vec<SvgData> = data.into_iter().map(|(_, v)| v).collect();
 
     Ok(data)
-}
-
-#[derive(Debug)]
-pub struct SvgData {
-    pub name: String,
-    pub size: i64,
-    pub ratio: f64,
-    pub color: String,
 }
 
 fn to_svg_data(stats: &ResponseData) -> Result<HashMap<String, SvgData>, AppError> {

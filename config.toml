@@ -1,1 +1,2 @@
 ignore_languages = ["HTML", "PHP", "Blade", "MQL5", "MQL4", "Vue", "CSS", "SCSS", "Makefile", "Batchfile"]
+languages_count = 5

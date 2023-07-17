@@ -4,6 +4,7 @@ use serde::Deserialize;
 #[derive(Debug, Deserialize)]
 pub struct Config {
     pub ignore_languages: Vec<String>,
+    pub languages_count: usize
 }
 
 pub fn load() -> Config {

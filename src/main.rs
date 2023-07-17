@@ -16,12 +16,13 @@ pub enum AppError {
 
 #[tokio::main]
 async fn main() -> Result<(), AppError> {
+    let config = config::load();
     let mut data = graphql::get_github_summary()
         .await
         .map_err(|_| AppError::GraphQLError)?;
 
     data.sort_by(|a, b| b.size.partial_cmp(&a.size).unwrap());
-    data.truncate(10);
+    data.truncate(config.languages_count);
 
     let svg_data = renderer::write(&data)?;
     let file = File::create("image.svg");
