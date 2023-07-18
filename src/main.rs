@@ -8,30 +8,25 @@ use std::io::prelude::*;
 
 #[derive(Debug)]
 pub enum AppError {
-    JsonCreateFailure,
-    JsonExtractValueFailure,
-    JsonPublishFailure,
-    GraphQLError,
+    GraphQLClientInitError,
+    GraphQLRequestError,
+    GraphQLResponseError,
+    JsonDeserializeError,
+    ConvertError,
+    SvgOutputError,
 }
 
 #[tokio::main]
 async fn main() -> Result<(), AppError> {
     let config = config::load();
-    let mut data = graphql::get_top_languages()
-        .await
-        .map_err(|_| AppError::GraphQLError)?;
+    let mut data = graphql::get_top_languages().await?;
 
     data.sort_by(|a, b| b.size.partial_cmp(&a.size).unwrap());
     data.truncate(config.languages_count);
 
     let svg_data = renderer::write(&data)?;
     let file = File::create("image.svg");
-    let mut file = match file {
-        Ok(f) => f,
-        Err(_) => {
-            return Err(AppError::JsonPublishFailure);
-        }
-    };
+    let mut file = file.map_err(|_| AppError::SvgOutputError)?;
     let _ = file.write_all(svg_data.as_bytes());
 
     Ok(())
