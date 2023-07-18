@@ -115,7 +115,7 @@ fn create_top_lang_chart(data: &Vec<crate::graphql::LanguageSummary>) -> Documen
 
     root = root
         .set("x", 20)
-        .set("y", 50)
+        .set("y", 30)
         .add(title)
         .add(top_lang_chart);
     root
@@ -127,7 +127,7 @@ pub fn write(
 ) -> Result<String, AppError> {
     let styles = Style::new(CSS);
     let all_star_count = all_repos.iter().map(|v| v.stargazer_count).sum::<i64>();
-    let star = create_star_icon(all_star_count).set("x", 20).set("y", 30);
+    let star = create_star_icon(all_star_count).set("x", 20).set("y", 10);
     let top_lang_chart = create_top_lang_chart(top_langs);
     let root = Document::new()
         .set("width", "300")
