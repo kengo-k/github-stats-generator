@@ -1,4 +1,5 @@
 use crate::generated::list_repositories::list_repositories;
+use crate::generated::list_repositories::list_repositories::ListRepositoriesViewerRepositoriesNodes;
 use crate::generated::list_repositories::ListRepositories;
 use crate::generated::top_languages::top_languages;
 use crate::generated::top_languages::TopLanguages;
@@ -35,7 +36,8 @@ fn get_client() -> Result<RequestBuilder, AppError> {
     client.map(|c| c.post("https://api.github.com/graphql").bearer_auth(token))
 }
 
-pub async fn list_repositories() -> Result<(), AppError> {
+pub async fn list_repositories() -> Result<Vec<ListRepositoriesViewerRepositoriesNodes>, AppError>
+{
     let client = get_client()?;
     let query = ListRepositories::build_query(list_repositories::Variables {});
 
@@ -49,7 +51,23 @@ pub async fn list_repositories() -> Result<(), AppError> {
         .text()
         .await
         .map_err(|_| AppError::GraphQLResponseError)?;
-    Ok(())
+
+    let response: GraphQLResponse<list_repositories::ResponseData> =
+        serde_json::from_str(&body_text).map_err(|_| AppError::JsonDeserializeError)?;
+
+    let nodes = response
+        .data
+        .viewer
+        .repositories
+        .nodes
+        .ok_or(AppError::ConvertError)?;
+
+    let mut result: Vec<list_repositories::ListRepositoriesViewerRepositoriesNodes> = Vec::new();
+    for node in nodes {
+        let node = node.ok_or(AppError::ConvertError)?;
+        result.push(node);
+    }
+    Ok(result)
 }
 
 pub async fn get_top_languages() -> Result<Vec<LanguageSummary>, AppError> {

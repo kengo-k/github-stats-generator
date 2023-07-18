@@ -1,3 +1,4 @@
+use crate::generated::list_repositories::list_repositories;
 use crate::AppError;
 use svg::node::element::{Path, Rectangle, Style, Text};
 use svg::Document;
@@ -19,14 +20,17 @@ const CSS: &'static str = r#" .top_lang_chart text {
 
 const STAR_ICON: &'static str = "M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.751.751 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Zm0 2.445L6.615 5.5a.75.75 0 0 1-.564.41l-3.097.45 2.24 2.184a.75.75 0 0 1 .216.664l-.528 3.084 2.769-1.456a.75.75 0 0 1 .698 0l2.77 1.456-.53-3.084a.75.75 0 0 1 .216-.664l2.24-2.183-3.096-.45a.75.75 0 0 1-.564-.41L8 2.694Z";
 
-fn create_star_icon() -> Document {
+fn create_star_icon(count: i64) -> Document {
     let mut root = Document::new().set("class", "star");
 
     let text = Text::new()
         .set("x", 25)
         .set("y", 13)
         .set("width", 100)
-        .add(svg::node::Text::new("Total Stars Earned: "));
+        .add(svg::node::Text::new(format!(
+            "Total Stars Earned: {}",
+            count
+        )));
 
     let path = Path::new().set("d", STAR_ICON);
     let star = Document::new()
@@ -117,10 +121,14 @@ fn create_top_lang_chart(data: &Vec<crate::graphql::LanguageSummary>) -> Documen
     root
 }
 
-pub fn write(data: &Vec<crate::graphql::LanguageSummary>) -> Result<String, AppError> {
+pub fn write(
+    top_langs: &Vec<crate::graphql::LanguageSummary>,
+    all_repos: &Vec<list_repositories::ListRepositoriesViewerRepositoriesNodes>,
+) -> Result<String, AppError> {
     let styles = Style::new(CSS);
-    let star = create_star_icon().set("x", 20).set("y", 30);
-    let top_lang_chart = create_top_lang_chart(data);
+    let all_star_count = all_repos.iter().map(|v| v.stargazer_count).sum::<i64>();
+    let star = create_star_icon(all_star_count).set("x", 20).set("y", 30);
+    let top_lang_chart = create_top_lang_chart(top_langs);
     let root = Document::new().add(styles).add(star).add(top_lang_chart);
 
     Ok(root.to_string())

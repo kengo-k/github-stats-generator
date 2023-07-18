@@ -19,12 +19,14 @@ pub enum AppError {
 #[tokio::main]
 async fn main() -> Result<(), AppError> {
     let config = config::load();
-    let mut data = graphql::get_top_languages().await?;
 
-    data.sort_by(|a, b| b.size.partial_cmp(&a.size).unwrap());
-    data.truncate(config.languages_count);
+    let mut top_languages = graphql::get_top_languages().await?;
+    top_languages.sort_by(|a, b| b.size.partial_cmp(&a.size).unwrap());
+    top_languages.truncate(config.languages_count);
 
-    let svg_data = renderer::write(&data)?;
+    let all_repos = graphql::list_repositories().await?;
+
+    let svg_data = renderer::write(&top_languages, &all_repos)?;
     let file = File::create("image.svg");
     let mut file = file.map_err(|_| AppError::SvgOutputError)?;
     let _ = file.write_all(svg_data.as_bytes());
