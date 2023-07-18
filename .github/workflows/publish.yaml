@@ -25,3 +25,19 @@ jobs:
         run: ./target/release/github-summary
         env:
           GITHUB_TOKEN: ${{ secrets.DEPLOY_SECRETS_KEY }}
+      - name: Checkout Profile repository
+        uses: actions/checkout@v2
+        with:
+          repository: kengo-k/kengo-k
+          token: ${{ secrets.DEPLOY_SECRETS_KEY }}
+          path: dist
+      - name: Copy image.svg to Profile repository
+        run: cp ./target/image.svg ./dist/image.svg
+      - name: Commit and push to Profile repository
+        run: |
+          cd ./dist
+          git config --local user.email "31839234+kengo-k@users.noreply.github.com"
+          git config --local user.name "GitHub Action"
+          git add image.svg
+          git commit --amend --no-edit
+          git push origin main --force
