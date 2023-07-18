@@ -129,7 +129,12 @@ pub fn write(
     let all_star_count = all_repos.iter().map(|v| v.stargazer_count).sum::<i64>();
     let star = create_star_icon(all_star_count).set("x", 20).set("y", 30);
     let top_lang_chart = create_top_lang_chart(top_langs);
-    let root = Document::new().add(styles).add(star).add(top_lang_chart);
+    let root = Document::new()
+        .set("width", "300")
+        .set("height", "300")
+        .add(styles)
+        .add(star)
+        .add(top_lang_chart);
 
     Ok(root.to_string())
 }
