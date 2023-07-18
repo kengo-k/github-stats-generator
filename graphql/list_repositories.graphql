@@ -1,14 +1,28 @@
-query ListRepositories($login: String!) {
-  user(login: $login) {
+# import_types: chrono::DateTime<chrono::Utc>
+# as_types: DateTime -> chrono::DateTime<chrono::Utc>
+
+query ListRepositories {
+  viewer {
     repositories(first: 100, orderBy: { field: PUSHED_AT, direction: DESC }) {
       nodes {
         id
         name
         isPrivate
         isFork
+        isArchived
+        isTemplate
         diskUsage
         stargazerCount
         pushedAt
+        repositoryTopics(first: 10) {
+          edges {
+            node {
+              topic {
+                name
+              }
+            }
+          }
+        }
       }
     }
   }

@@ -4,7 +4,7 @@ pub mod list_repositories {
     #![allow(dead_code)]
     use std::result::Result;
     pub const OPERATION_NAME: &str = "ListRepositories";
-    pub const QUERY : & str = "query ListRepositories($login: String!) {\n  user(login: $login) {\n    repositories(first: 100, orderBy: { field: PUSHED_AT, direction: DESC }) {\n      nodes {\n        id\n        name\n        isPrivate\n        isFork\n        diskUsage\n        stargazerCount\n        pushedAt\n      }\n    }\n  }\n}\n" ;
+    pub const QUERY : & str = "# import_types: chrono::DateTime<chrono::Utc>\n# as_types: DateTime -> chrono::DateTime<chrono::Utc>\n\nquery ListRepositories {\n  viewer {\n    repositories(first: 100, orderBy: { field: PUSHED_AT, direction: DESC }) {\n      nodes {\n        id\n        name\n        isPrivate\n        isFork\n        isArchived\n        isTemplate\n        diskUsage\n        stargazerCount\n        pushedAt\n        repositoryTopics(first: 10) {\n          edges {\n            node {\n              topic {\n                name\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n}\n" ;
     use super::*;
     use serde::{Deserialize, Serialize};
     #[allow(dead_code)]
@@ -15,38 +15,58 @@ pub mod list_repositories {
     type Int = i64;
     #[allow(dead_code)]
     type ID = String;
-    type DateTime = super::DateTime;
+    type DateTime = crate::graphql::custom_scalars::DateTime;
     #[derive(Serialize)]
-    pub struct Variables {
-        pub login: String,
-    }
-    impl Variables {}
+    pub struct Variables;
     #[derive(Deserialize)]
     pub struct ResponseData {
-        pub user: Option<ListRepositoriesUser>,
+        pub viewer: ListRepositoriesViewer,
     }
     #[derive(Deserialize)]
-    pub struct ListRepositoriesUser {
-        pub repositories: ListRepositoriesUserRepositories,
+    pub struct ListRepositoriesViewer {
+        pub repositories: ListRepositoriesViewerRepositories,
     }
     #[derive(Deserialize)]
-    pub struct ListRepositoriesUserRepositories {
-        pub nodes: Option<Vec<Option<ListRepositoriesUserRepositoriesNodes>>>,
+    pub struct ListRepositoriesViewerRepositories {
+        pub nodes: Option<Vec<Option<ListRepositoriesViewerRepositoriesNodes>>>,
     }
     #[derive(Deserialize)]
-    pub struct ListRepositoriesUserRepositoriesNodes {
+    pub struct ListRepositoriesViewerRepositoriesNodes {
         pub id: ID,
         pub name: String,
         #[serde(rename = "isPrivate")]
         pub is_private: Boolean,
         #[serde(rename = "isFork")]
         pub is_fork: Boolean,
+        #[serde(rename = "isArchived")]
+        pub is_archived: Boolean,
+        #[serde(rename = "isTemplate")]
+        pub is_template: Boolean,
         #[serde(rename = "diskUsage")]
         pub disk_usage: Option<Int>,
         #[serde(rename = "stargazerCount")]
         pub stargazer_count: Int,
         #[serde(rename = "pushedAt")]
         pub pushed_at: Option<DateTime>,
+        #[serde(rename = "repositoryTopics")]
+        pub repository_topics: ListRepositoriesViewerRepositoriesNodesRepositoryTopics,
+    }
+    #[derive(Deserialize)]
+    pub struct ListRepositoriesViewerRepositoriesNodesRepositoryTopics {
+        pub edges:
+            Option<Vec<Option<ListRepositoriesViewerRepositoriesNodesRepositoryTopicsEdges>>>,
+    }
+    #[derive(Deserialize)]
+    pub struct ListRepositoriesViewerRepositoriesNodesRepositoryTopicsEdges {
+        pub node: Option<ListRepositoriesViewerRepositoriesNodesRepositoryTopicsEdgesNode>,
+    }
+    #[derive(Deserialize)]
+    pub struct ListRepositoriesViewerRepositoriesNodesRepositoryTopicsEdgesNode {
+        pub topic: ListRepositoriesViewerRepositoriesNodesRepositoryTopicsEdgesNodeTopic,
+    }
+    #[derive(Deserialize)]
+    pub struct ListRepositoriesViewerRepositoriesNodesRepositoryTopicsEdgesNodeTopic {
+        pub name: String,
     }
 }
 impl graphql_client::GraphQLQuery for ListRepositories {
