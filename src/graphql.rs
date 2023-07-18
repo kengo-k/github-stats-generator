@@ -1,12 +1,16 @@
-use crate::generated::top_languages;
 use crate::generated::top_languages::top_languages::ResponseData;
 use crate::generated::top_languages::top_languages::Variables;
+use crate::generated::{list_repositories, top_languages};
 use crate::{config, AppError};
 use graphql_client::GraphQLQuery;
-use reqwest::Client;
+use reqwest::{Client, RequestBuilder};
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::env;
+
+pub mod custom_scalars {
+    pub type DateTime = chrono::DateTime<chrono::Utc>;
+}
 
 #[derive(Deserialize)]
 struct GraphQLResponse {
@@ -21,17 +25,28 @@ pub struct LanguageSummary {
     pub color: String,
 }
 
-pub async fn get_top_languages() -> Result<Vec<LanguageSummary>, AppError> {
-    let token = env::var("GITHUB_TOKEN").expect("GITHUB_TOKEN is not set");
+fn get_client() -> Result<RequestBuilder, AppError> {
     let client = Client::builder()
         .user_agent("MyApp/0.1")
         .build()
-        .map_err(|_| AppError::GraphQLError)?;
+        .map_err(|_| AppError::GraphQLError);
+    let token = env::var("GITHUB_TOKEN").expect("GITHUB_TOKEN is not set");
+    client.map(|c| c.post("https://api.github.com/graphql").bearer_auth(token))
+}
+
+pub async fn list_repositories() -> Result<(), AppError> {
+    let client = get_client()?;
+    let query = list_repositories::ListRepositories::build_query(
+        list_repositories::list_repositories::Variables {},
+    );
+    Ok(())
+}
+
+pub async fn get_top_languages() -> Result<Vec<LanguageSummary>, AppError> {
+    let client = get_client()?;
     let query = top_languages::TopLanguages::build_query(Variables {});
 
     let response = client
-        .post("https://api.github.com/graphql")
-        .bearer_auth(token)
         .json(&query)
         .send()
         .await
