@@ -1,8 +1,8 @@
 build:
-	cargo build
+	cargo watch -x build
 
-dev:
-	cargo watch -x run
+run:
+	GITHUB_TOKEN=$$(cat ./github_pat) cargo run
 
 generate:
 	graphql-client generate -o src/generated --schema-path graphql/schema.json graphql/top_languages.graphql
