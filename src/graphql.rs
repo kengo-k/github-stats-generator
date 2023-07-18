@@ -1,6 +1,7 @@
-use crate::generated::top_languages::top_languages::ResponseData;
-use crate::generated::top_languages::top_languages::Variables;
-use crate::generated::{list_repositories, top_languages};
+use crate::generated::list_repositories::list_repositories;
+use crate::generated::list_repositories::ListRepositories;
+use crate::generated::top_languages::top_languages;
+use crate::generated::top_languages::TopLanguages;
 use crate::{config, AppError};
 use graphql_client::GraphQLQuery;
 use reqwest::{Client, RequestBuilder};
@@ -13,8 +14,8 @@ pub mod custom_scalars {
 }
 
 #[derive(Deserialize)]
-struct GraphQLResponse {
-    pub data: ResponseData,
+struct GraphQLResponse<T> {
+    pub data: T,
 }
 
 #[derive(Debug)]
@@ -36,9 +37,7 @@ fn get_client() -> Result<RequestBuilder, AppError> {
 
 pub async fn list_repositories() -> Result<(), AppError> {
     let client = get_client()?;
-    let query = list_repositories::ListRepositories::build_query(
-        list_repositories::list_repositories::Variables {},
-    );
+    let query = ListRepositories::build_query(list_repositories::Variables {});
 
     let response = client
         .json(&query)
@@ -55,7 +54,7 @@ pub async fn list_repositories() -> Result<(), AppError> {
 
 pub async fn get_top_languages() -> Result<Vec<LanguageSummary>, AppError> {
     let client = get_client()?;
-    let query = top_languages::TopLanguages::build_query(Variables {});
+    let query = TopLanguages::build_query(top_languages::Variables {});
 
     let response = client
         .json(&query)
@@ -67,7 +66,7 @@ pub async fn get_top_languages() -> Result<Vec<LanguageSummary>, AppError> {
         .text()
         .await
         .map_err(|_| AppError::GraphQLResponseError)?;
-    let response: GraphQLResponse =
+    let response: GraphQLResponse<top_languages::ResponseData> =
         serde_json::from_str(&body_text).map_err(|_| AppError::JsonDeserializeError)?;
 
     let data = to_svg_data(&response.data)?;
@@ -76,7 +75,9 @@ pub async fn get_top_languages() -> Result<Vec<LanguageSummary>, AppError> {
     Ok(data)
 }
 
-fn to_svg_data(stats: &ResponseData) -> Result<HashMap<String, LanguageSummary>, AppError> {
+fn to_svg_data(
+    stats: &top_languages::ResponseData,
+) -> Result<HashMap<String, LanguageSummary>, AppError> {
     let config = config::load();
     let mut data: HashMap<String, LanguageSummary> = HashMap::new();
 
