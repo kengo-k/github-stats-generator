@@ -31,6 +31,7 @@ jobs:
           repository: kengo-k/kengo-k
           token: ${{ secrets.DEPLOY_SECRETS_KEY }}
           path: dist
+          fetch-depth: 0
       - name: Copy image.svg to Profile repository
         run: cp ./image.svg ./dist/image.svg
       - name: Commit and push to Profile repository
