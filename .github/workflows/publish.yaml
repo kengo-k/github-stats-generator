@@ -23,3 +23,5 @@ jobs:
           args: --release
       - name: Run
         run: ./target/release/github-summary
+        env:
+          GITHUB_TOKEN: ${{ secrets.DEPLOY_SECRETS_KEY }}
