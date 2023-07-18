@@ -32,7 +32,7 @@ jobs:
           token: ${{ secrets.DEPLOY_SECRETS_KEY }}
           path: dist
       - name: Copy image.svg to Profile repository
-        run: cp ./target/image.svg ./dist/image.svg
+        run: cp ./image.svg ./dist/image.svg
       - name: Commit and push to Profile repository
         run: |
           cd ./dist
