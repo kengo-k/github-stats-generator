@@ -1,9 +1,8 @@
 name: publish
 
 on:
-  push:
-    branches:
-      - main
+  schedule:
+    - cron: '10 * * * *'
 
 jobs:
   build:
@@ -11,6 +10,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+        with:
+          ref: 'v1.0.0'
       - name: Set up Rust
         uses: actions-rs/toolchain@v1
         with:
