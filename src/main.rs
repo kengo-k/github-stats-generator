@@ -22,6 +22,10 @@ async fn main() -> Result<(), AppError> {
 
     let mut top_languages = graphql::get_top_languages().await?;
     top_languages.sort_by(|a, b| b.size.partial_cmp(&a.size).unwrap());
+
+    let top_languages_json = serde_json::to_string(&top_languages).map_err(|_| AppError::ConvertError)?;
+    std::fs::write("top_lang.json", top_languages_json).map_err(|_| AppError::ConvertError)?;
+
     top_languages.truncate(config.languages_count);
 
     let all_repos = graphql::list_repositories().await?;

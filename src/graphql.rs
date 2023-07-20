@@ -6,7 +6,7 @@ use crate::generated::top_languages::TopLanguages;
 use crate::{config, AppError};
 use graphql_client::GraphQLQuery;
 use reqwest::{Client, RequestBuilder};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::env;
 
@@ -19,7 +19,7 @@ struct GraphQLResponse<T> {
     pub data: T,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct LanguageSummary {
     pub name: String,
     pub size: i64,
@@ -146,5 +146,16 @@ fn to_svg_data(
             entry.size += size;
         }
     }
+
+    let mut sum = 0;
+    for (_, value) in &data {
+        sum += value.size;
+    }
+    for lang in data.keys().cloned().collect::<Vec<_>>() {
+        if let Some(d) = data.get_mut(&lang) {
+            d.ratio = d.size as f64 / sum as f64 * 100.0;
+        }
+    }
+
     Ok(data)
 }

@@ -86,19 +86,17 @@ fn create_top_lang_chart(data: &Vec<crate::graphql::LanguageSummary>) -> Documen
         .set("height", height)
         .set("viewBox", (0, 0, 300, height))
         .set("class", "top_lang_chart");
-    let sum = data.iter().map(|d| d.size).sum::<i64>();
     let charts: Vec<_> = data
         .iter()
         .enumerate()
         .map(|(i, d)| {
-            let ratio = d.size as f64 / sum as f64 * 100.0;
             let text = format!(
                 "{}: {:.1}% ({}KB)",
                 d.name.as_str(),
-                ratio as f32,
+                d.ratio,
                 d.size / 1000
             );
-            let doc = create_bar_chart(text.as_str(), ratio, d.color.as_str());
+            let doc = create_bar_chart(text.as_str(), d.ratio, d.color.as_str());
             doc.set("y", i * 35)
         })
         .collect::<Vec<_>>();
