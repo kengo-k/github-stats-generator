@@ -27,6 +27,19 @@ pub struct LanguageSummary {
     pub color: String,
 }
 
+#[derive(Debug, Serialize)]
+pub struct RepositoryData {
+    pub name: String,
+    pub is_private: bool,
+    pub is_fork: bool,
+    pub is_archived: bool,
+    pub is_template: bool,
+    pub disk_usage: i64,
+    pub stargazer_count: i64,
+    pub pushed_at: String,
+    pub repository_topics: Vec<String>,
+}
+
 fn get_client() -> Result<RequestBuilder, AppError> {
     let client = Client::builder()
         .user_agent("MyApp/0.1")
@@ -36,7 +49,7 @@ fn get_client() -> Result<RequestBuilder, AppError> {
     client.map(|c| c.post("https://api.github.com/graphql").bearer_auth(token))
 }
 
-pub async fn list_repositories() -> Result<Vec<ListRepositoriesViewerRepositoriesNodes>, AppError>
+pub async fn list_repositories() -> Result<Vec<RepositoryData>, AppError>
 {
     let client = get_client()?;
     let query = ListRepositories::build_query(list_repositories::Variables {});
@@ -62,10 +75,29 @@ pub async fn list_repositories() -> Result<Vec<ListRepositoriesViewerRepositorie
         .nodes
         .ok_or(AppError::ConvertError)?;
 
-    let mut result: Vec<list_repositories::ListRepositoriesViewerRepositoriesNodes> = Vec::new();
+    let values = vec![Some(1), None];
+    let values2: Vec<_> = values.into_iter().filter_map(|aaa|aaa).collect();
+
+    let mut result: Vec<RepositoryData> = Vec::new();
     for node in nodes {
         let node = node.ok_or(AppError::ConvertError)?;
-        result.push(node);
+        let x = node.repository_topics.edges.unwrap_or_else(Vec::new);
+        let y: Vec<_> = x.into_iter().filter_map(|bbb| bbb).collect();
+        let z: Vec<_> = y.into_iter().map(|x| x.node).filter_map(|ccc| ccc).collect();
+        let zzz: Vec<_> = z.into_iter().map(|zzz| zzz.topic.name).collect();
+
+        let repo = RepositoryData {
+            name: node.name,
+            is_private: node.is_private,
+            is_fork: node.is_fork,
+            is_archived: node.is_archived,
+            is_template: node.is_template,
+            disk_usage: node.disk_usage.unwrap_or(-1),
+            stargazer_count: node.stargazer_count,
+            pushed_at: node.pushed_at.map(|d| d.to_string()).unwrap_or("".to_string()),
+            repository_topics: zzz
+        };
+        result.push(repo);
     }
     Ok(result)
 }

@@ -29,6 +29,8 @@ async fn main() -> Result<(), AppError> {
     top_languages.truncate(config.languages_count);
 
     let all_repos = graphql::list_repositories().await?;
+    let all_repos_json = serde_json::to_string(&all_repos).map_err(|_| AppError::ConvertError)?;
+    std::fs::write("all_repos.json", all_repos_json).map_err(|_| AppError::ConvertError)?;
 
     let svg_data = renderer::write(&top_languages, &all_repos)?;
     let file = File::create("image.svg");

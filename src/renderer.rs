@@ -2,6 +2,7 @@ use crate::generated::list_repositories::list_repositories;
 use crate::AppError;
 use svg::node::element::{Path, Rectangle, Style, Text};
 use svg::Document;
+use crate::graphql::RepositoryData;
 
 const CSS: &'static str = r#" .top_lang_chart text {
     font: 400 11px 'Segoe UI', Ubuntu, Sans-Serif;
@@ -121,7 +122,7 @@ fn create_top_lang_chart(data: &Vec<crate::graphql::LanguageSummary>) -> Documen
 
 pub fn write(
     top_langs: &Vec<crate::graphql::LanguageSummary>,
-    all_repos: &Vec<list_repositories::ListRepositoriesViewerRepositoriesNodes>,
+    all_repos: &Vec<RepositoryData>,
 ) -> Result<String, AppError> {
     let styles = Style::new(CSS);
     let all_star_count = all_repos.iter().map(|v| v.stargazer_count).sum::<i64>();
