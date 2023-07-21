@@ -5,7 +5,7 @@ use crate::generated::github_stats::git_hub_stats::{
 };
 use crate::generated::github_stats::GitHubStats;
 use crate::graphql::git_hub_stats::ResponseData;
-use crate::{config, AppError};
+use crate::AppError;
 use graphql_client::GraphQLQuery;
 use reqwest::{Client, RequestBuilder};
 use serde::{Deserialize, Serialize};
@@ -30,7 +30,7 @@ struct GraphQLResponse<T> {
 ///
 /// A struct that normalizes the response from GraphQL for easier handling
 ///
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub struct RepositoryStat {
     pub id: String,
     pub name: String,
@@ -50,7 +50,7 @@ pub struct RepositoryStat {
 ///
 /// Data about the languages used in the repository
 ///
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub struct RepositoryLanguage {
     pub name: String,
     pub color: String,

@@ -1,6 +1,6 @@
 query GitHubStats($from: GitTimestamp!, $to: GitTimestamp!) {
   viewer {
-    repositories(first: 100) {
+    repositories(isFork: false, first: 100) {
       nodes {
         id
         name

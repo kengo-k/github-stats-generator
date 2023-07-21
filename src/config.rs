@@ -3,6 +3,7 @@ use std::fs;
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
+    pub ignore_repositories: Vec<String>,
     pub ignore_languages: Vec<String>,
     pub languages_count: usize,
 }
