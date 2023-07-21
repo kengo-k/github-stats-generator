@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          ref: 'v1.0.0'
+          ref: 'v1.1.0'
       - name: Set up Rust
         uses: actions-rs/toolchain@v1
         with:
@@ -33,13 +33,13 @@ jobs:
           token: ${{ secrets.DEPLOY_SECRETS_KEY }}
           path: dist
           fetch-depth: 0
-      - name: Copy image.svg to Profile repository
-        run: cp ./image.svg ./dist/image.svg
+      - name: Copy github_stats.svg to Profile repository
+        run: cp ./github_stats.svg ./dist/github_stats.svg
       - name: Commit and push to Profile repository
         run: |
           cd ./dist
           git config --local user.email "31839234+kengo-k@users.noreply.github.com"
           git config --local user.name "GitHub Action"
-          git add image.svg
+          git add github_stats.svg
           git commit --amend --no-edit
           git push origin main --force
