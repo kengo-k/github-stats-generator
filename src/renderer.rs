@@ -110,8 +110,8 @@ impl Renderer {
         let star = create_star_icon(all_star_count).set("x", 20).set("y", 10);
         let top_lang_charts = self.create_top_lang_charts();
         let root = Document::new()
-            .set("width", "300")
-            .set("height", "300")
+            .set("width", 300)
+            .set("height", 500)
             .add(styles)
             .add(star)
             .add(top_lang_charts);
@@ -150,7 +150,7 @@ impl Renderer {
                     d.size as f64 / self.language_summary.total_size as f64 * 100.0,
                     d.color.as_str(),
                 );
-                doc.set("y", i * 35)
+                doc.set("y", i * 40)
             })
             .collect::<Vec<_>>();
 
