@@ -1,2 +1,1 @@
-pub mod list_repositories;
-pub mod top_languages;
+pub mod github_stats;

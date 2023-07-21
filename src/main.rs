@@ -3,8 +3,7 @@ mod generated;
 mod graphql;
 mod renderer;
 
-use std::fs::File;
-use std::io::prelude::*;
+use chrono::{Duration, Utc};
 
 #[derive(Debug)]
 pub enum AppError {
@@ -16,26 +15,22 @@ pub enum AppError {
     SvgOutputError,
 }
 
+fn get_date_range() -> (String, String) {
+    let to = Utc::now();
+    let from = to - Duration::days(7);
+    (from.to_rfc3339(), to.to_rfc3339())
+}
+
 #[tokio::main]
 async fn main() -> Result<(), AppError> {
     let config = config::load();
 
-    let mut top_languages = graphql::get_top_languages().await?;
-    top_languages.sort_by(|a, b| b.size.partial_cmp(&a.size).unwrap());
-
-    let top_languages_json = serde_json::to_string(&top_languages).map_err(|_| AppError::ConvertError)?;
-    std::fs::write("top_lang.json", top_languages_json).map_err(|_| AppError::ConvertError)?;
-
-    top_languages.truncate(config.languages_count);
-
-    let all_repos = graphql::list_repositories().await?;
-    let all_repos_json = serde_json::to_string(&all_repos).map_err(|_| AppError::ConvertError)?;
-    std::fs::write("all_repos.json", all_repos_json).map_err(|_| AppError::ConvertError)?;
-
-    let svg_data = renderer::write(&top_languages, &all_repos)?;
-    let file = File::create("image.svg");
-    let mut file = file.map_err(|_| AppError::SvgOutputError)?;
-    let _ = file.write_all(svg_data.as_bytes());
+    let date_range = get_date_range();
+    let github_stats = graphql::get_github_stats(date_range.0, date_range.1).await?;
+    let github_stats = graphql::normalize(github_stats);
+    let github_stats_json =
+        serde_json::to_string(&github_stats).map_err(|_| AppError::ConvertError)?;
+    std::fs::write("github_stats.json", github_stats_json).map_err(|_| AppError::ConvertError)?;
 
     Ok(())
 }

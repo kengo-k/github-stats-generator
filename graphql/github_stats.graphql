@@ -1,0 +1,48 @@
+query GitHubStats($from: GitTimestamp!, $to: GitTimestamp!) {
+  viewer {
+    repositories(first: 100) {
+      nodes {
+        id
+        name
+        isPrivate
+        isFork
+        isArchived
+        isTemplate
+        diskUsage
+        stargazerCount
+        pushedAt
+        repositoryTopics(first: 100) {
+          edges {
+            node {
+              topic {
+                name
+              }
+            }
+          }
+        }
+        languages(first: 100) {
+          edges {
+            node {
+              name
+              color
+            }
+            size
+          }
+        }
+        defaultBranchRef {
+          target {
+            __typename
+            ... on Commit {
+              commitHistoryPeriod: history(since: $from, until: $to) {
+                totalCount
+              }
+              commitHistoryAll: history {
+                totalCount
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
