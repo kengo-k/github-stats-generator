@@ -24,21 +24,10 @@ fn get_date_range() -> (String, String) {
 
 #[tokio::main]
 async fn main() -> Result<(), AppError> {
-    let config = config::load();
 
     let date_range = get_date_range();
     let github_stats = graphql::get_github_stats(date_range.0, date_range.1).await?;
     let github_stats = graphql::normalize(github_stats);
-    let github_stats = github_stats
-        .into_iter()
-        .filter_map(|item| {
-            if config.ignore_repositories.contains(&item.name) {
-                None
-            } else {
-                Some(item)
-            }
-        })
-        .collect();
 
     let github_stats_json =
         serde_json::to_string(&github_stats).map_err(|_| AppError::ConvertError)?;

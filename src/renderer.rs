@@ -80,6 +80,9 @@ impl Renderer {
         let mut language_summary = LanguageSummary::new();
         let map = &mut language_summary.data;
         for s in &stats {
+            if config.ignore_repositories.contains(&s.name) {
+                continue;
+            }
             let ls = &s.languages;
             for l in ls {
                 if config.ignore_languages.contains(&l.name) {
