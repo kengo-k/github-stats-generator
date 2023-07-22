@@ -114,7 +114,7 @@ impl Renderer {
         let top_lang_charts = self.create_top_lang_charts();
         let root = Document::new()
             .set("width", 300)
-            .set("height", 600)
+            .set("height", 450)
             .add(styles)
             .add(star)
             .add(top_lang_charts);
@@ -125,7 +125,7 @@ impl Renderer {
     fn create_top_lang_charts(&self) -> Document {
         let config = config::load();
         let values: Vec<_> = self.language_summary.data.values().collect();
-        let height = values.len() * 35;
+        let height = values.len() * 42;
         let mut root = Document::new();
         let mut top_lang_chart = Document::new()
             .set("x", 0)
