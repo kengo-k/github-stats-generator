@@ -114,7 +114,7 @@ impl Renderer {
         let top_lang_charts = self.create_top_lang_charts();
         let root = Document::new()
             .set("width", 300)
-            .set("height", 450)
+            .set("height", 500)
             .add(styles)
             .add(star)
             .add(top_lang_charts);
