@@ -1,11 +1,13 @@
 use serde::Deserialize;
-use std::fs;
+use std::{collections::HashMap, fs};
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
+    pub languages_count: usize,
     pub ignore_repositories: Vec<String>,
     pub ignore_languages: Vec<String>,
-    pub languages_count: usize,
+    pub language_mapping: HashMap<String, String>,
+    pub rename_language: HashMap<String, String>,
 }
 
 pub fn load() -> Config {

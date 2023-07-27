@@ -1,3 +1,10 @@
+languages_count = 99
 ignore_repositories = ["kengo-k.github.io", "study-laravel"]
-ignore_languages = ["HTML", "PHP", "Blade", "Vue", "CSS", "Sass", "Makefile", "Batchfile", "Shell", "SCSS", "Dockerfile", "Vim Script"]
-languages_count = 10
+ignore_languages = []
+
+[language_mapping]
+CSS = "CSS"
+SCSS = "CSS"
+
+[rename_language]
+CSS = "CSS/SCSS"
