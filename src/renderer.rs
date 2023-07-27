@@ -72,10 +72,11 @@ impl LanguageSummary {
 pub struct Renderer {
     pub stats: Vec<RepositoryStat>,
     pub language_summary: LanguageSummary,
+    pub language_colors: HashMap<String, String>,
 }
 
 impl Renderer {
-    pub fn new(stats: Vec<RepositoryStat>) -> Self {
+    pub fn new(stats: Vec<RepositoryStat>, language_colors: HashMap<String, String>) -> Self {
         let config = config::load();
         let mut language_summary = LanguageSummary::new();
         let map = &mut language_summary.data;
@@ -89,17 +90,35 @@ impl Renderer {
                     continue;
                 }
                 language_summary.total_size += l.size;
-                let mut entry = map.entry(l.name.clone()).or_insert(LanguageSummaryValue {
-                    name: l.name.clone(),
-                    color: l.color.clone(),
-                    size: 0,
-                });
+                let mapped_lang = config.language_mapping.get(&l.name);
+                let lang_name = match mapped_lang {
+                    Some(name) => name,
+                    None => &l.name,
+                };
+                let color = language_colors.get(lang_name);
+                let color = match color {
+                    Some(c) => c,
+                    None => &l.color,
+                };
+                let renamed = config.rename_language.get(lang_name);
+                let renamed = match renamed {
+                    Some(name) => name,
+                    None => lang_name,
+                };
+                let mut entry = map
+                    .entry(renamed.to_string())
+                    .or_insert(LanguageSummaryValue {
+                        name: renamed.to_string(),
+                        color: color.clone(),
+                        size: 0,
+                    });
                 (*entry).size += l.size;
             }
         }
         Self {
             stats,
             language_summary,
+            language_colors,
         }
     }
 
@@ -114,7 +133,7 @@ impl Renderer {
         let top_lang_charts = self.create_top_lang_charts();
         let root = Document::new()
             .set("width", 300)
-            .set("height", 500)
+            .set("height", 800)
             .add(styles)
             .add(star)
             .add(top_lang_charts);
