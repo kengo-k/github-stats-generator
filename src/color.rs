@@ -36,11 +36,10 @@ pub async fn get_language_color_settings() -> Result<HashMap<String, String>, Ap
 }
 
 mod tests {
-    use crate::color::get_language_color_settings;
 
     #[tokio::test]
     async fn test_get_language_color_settings() {
-        let colors = get_language_color_settings().await.unwrap();
+        let colors = crate::color::get_language_color_settings().await.unwrap();
         assert_ne!(colors.len(), 0);
 
         assert!(colors.contains_key("Rust"));
