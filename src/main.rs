@@ -5,6 +5,7 @@ mod graphql;
 mod renderer;
 
 use chrono::{Duration, Utc};
+use log::debug;
 use renderer::Renderer;
 
 #[derive(Debug)]
@@ -30,6 +31,8 @@ fn get_date_range() -> (String, String) {
 
 #[tokio::main]
 async fn main() -> Result<(), AppError> {
+    env_logger::init();
+    debug!("HELLO!!");
     let date_range = get_date_range();
     let github_stats = graphql::get_github_stats(date_range.0, date_range.1).await?;
     let github_stats = graphql::normalize(github_stats);
@@ -42,7 +45,7 @@ async fn main() -> Result<(), AppError> {
         .await
         .map_err(|_| AppError::ConvertError)?;
 
-    let renderer = Renderer::new(github_stats, language_colors);
+    let mut renderer = Renderer::new(github_stats, language_colors);
 
     let github_stats_svg = renderer.render();
     std::fs::write("github_stats.svg", github_stats_svg.to_string())
