@@ -22,15 +22,15 @@ pub mod custom_scalars {
 ///
 /// A wrapper struct for deserializing the GraphQL response
 ///
-#[derive(Deserialize)]
-struct GraphQLResponse<T> {
+#[derive(Deserialize, Serialize)]
+pub struct GraphQLResponse<T> {
     pub data: T,
 }
 
 ///
 /// A struct that normalizes the response from GraphQL for easier handling
 ///
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, Clone)]
 pub struct RepositoryStat {
     pub id: String,
     pub name: String,
@@ -50,7 +50,7 @@ pub struct RepositoryStat {
 ///
 /// Data about the languages used in the repository
 ///
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, Clone)]
 pub struct RepositoryLanguage {
     pub name: String,
     pub color: String,
@@ -72,7 +72,7 @@ fn get_client() -> Result<RequestBuilder, AppError> {
 ///
 /// Get repository statistics using the GitHub GraphQL API
 ///
-pub async fn get_github_stats(from: String, to: String) -> Result<ResponseData, AppError> {
+pub async fn get_github_stats(from: String, to: String) -> Result<GraphQLResponse<ResponseData>, AppError> {
     let client = get_client()?;
     let query = GitHubStats::build_query(git_hub_stats::Variables { from, to });
 
@@ -90,7 +90,7 @@ pub async fn get_github_stats(from: String, to: String) -> Result<ResponseData, 
     let response: GraphQLResponse<ResponseData> =
         serde_json::from_str(&body_text).map_err(|_| AppError::JsonDeserializeError)?;
 
-    Ok(response.data)
+    Ok(response)
 }
 
 pub fn normalize(response: ResponseData) -> Vec<RepositoryStat> {
