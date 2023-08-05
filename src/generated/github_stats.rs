@@ -17,25 +17,25 @@ pub mod git_hub_stats {
     type ID = String;
     type DateTime = crate::graphql::custom_scalars::DateTime;
     type GitTimestamp = crate::graphql::custom_scalars::GitTimestamp;
-    #[derive(Serialize)]
+    #[derive(Serialize, Debug)]
     pub struct Variables {
         pub from: GitTimestamp,
         pub to: GitTimestamp,
     }
     impl Variables {}
-    #[derive(Deserialize)]
+    #[derive(Deserialize, Serialize, Debug)]
     pub struct ResponseData {
         pub viewer: GitHubStatsViewer,
     }
-    #[derive(Deserialize)]
+    #[derive(Deserialize, Serialize, Debug)]
     pub struct GitHubStatsViewer {
         pub repositories: GitHubStatsViewerRepositories,
     }
-    #[derive(Deserialize)]
+    #[derive(Deserialize, Serialize, Debug)]
     pub struct GitHubStatsViewerRepositories {
         pub nodes: Option<Vec<Option<GitHubStatsViewerRepositoriesNodes>>>,
     }
-    #[derive(Deserialize)]
+    #[derive(Deserialize, Serialize, Debug)]
     pub struct GitHubStatsViewerRepositoriesNodes {
         pub id: ID,
         pub name: String,
@@ -59,41 +59,41 @@ pub mod git_hub_stats {
         #[serde(rename = "defaultBranchRef")]
         pub default_branch_ref: Option<GitHubStatsViewerRepositoriesNodesDefaultBranchRef>,
     }
-    #[derive(Deserialize)]
+    #[derive(Deserialize, Serialize, Debug)]
     pub struct GitHubStatsViewerRepositoriesNodesRepositoryTopics {
         pub edges: Option<Vec<Option<GitHubStatsViewerRepositoriesNodesRepositoryTopicsEdges>>>,
     }
-    #[derive(Deserialize)]
+    #[derive(Deserialize, Serialize, Debug)]
     pub struct GitHubStatsViewerRepositoriesNodesRepositoryTopicsEdges {
         pub node: Option<GitHubStatsViewerRepositoriesNodesRepositoryTopicsEdgesNode>,
     }
-    #[derive(Deserialize)]
+    #[derive(Deserialize, Serialize, Debug)]
     pub struct GitHubStatsViewerRepositoriesNodesRepositoryTopicsEdgesNode {
         pub topic: GitHubStatsViewerRepositoriesNodesRepositoryTopicsEdgesNodeTopic,
     }
-    #[derive(Deserialize)]
+    #[derive(Deserialize, Serialize, Debug)]
     pub struct GitHubStatsViewerRepositoriesNodesRepositoryTopicsEdgesNodeTopic {
         pub name: String,
     }
-    #[derive(Deserialize)]
+    #[derive(Deserialize, Serialize, Debug)]
     pub struct GitHubStatsViewerRepositoriesNodesLanguages {
         pub edges: Option<Vec<Option<GitHubStatsViewerRepositoriesNodesLanguagesEdges>>>,
     }
-    #[derive(Deserialize)]
+    #[derive(Deserialize, Serialize, Debug)]
     pub struct GitHubStatsViewerRepositoriesNodesLanguagesEdges {
         pub node: GitHubStatsViewerRepositoriesNodesLanguagesEdgesNode,
         pub size: Int,
     }
-    #[derive(Deserialize)]
+    #[derive(Deserialize, Serialize, Debug)]
     pub struct GitHubStatsViewerRepositoriesNodesLanguagesEdgesNode {
         pub name: String,
         pub color: Option<String>,
     }
-    #[derive(Deserialize)]
+    #[derive(Deserialize, Serialize, Debug)]
     pub struct GitHubStatsViewerRepositoriesNodesDefaultBranchRef {
         pub target: Option<GitHubStatsViewerRepositoriesNodesDefaultBranchRefTarget>,
     }
-    #[derive(Deserialize)]
+    #[derive(Deserialize, Serialize, Debug)]
     #[serde(tag = "__typename")]
     pub enum GitHubStatsViewerRepositoriesNodesDefaultBranchRefTarget {
         Blob,
@@ -101,7 +101,7 @@ pub mod git_hub_stats {
         Tag,
         Tree,
     }
-    #[derive(Deserialize)]
+    #[derive(Deserialize, Serialize, Debug)]
     pub struct GitHubStatsViewerRepositoriesNodesDefaultBranchRefTargetOnCommit {
         #[serde(rename = "commitHistoryPeriod")]
         pub commit_history_period:
@@ -110,12 +110,12 @@ pub mod git_hub_stats {
         pub commit_history_all:
             GitHubStatsViewerRepositoriesNodesDefaultBranchRefTargetOnCommitCommitHistoryAll,
     }
-    #[derive(Deserialize)]
+    #[derive(Deserialize, Serialize, Debug)]
     pub struct GitHubStatsViewerRepositoriesNodesDefaultBranchRefTargetOnCommitCommitHistoryPeriod {
         #[serde(rename = "totalCount")]
         pub total_count: Int,
     }
-    #[derive(Deserialize)]
+    #[derive(Deserialize, Serialize, Debug)]
     pub struct GitHubStatsViewerRepositoriesNodesDefaultBranchRefTargetOnCommitCommitHistoryAll {
         #[serde(rename = "totalCount")]
         pub total_count: Int,
