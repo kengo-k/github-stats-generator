@@ -8,7 +8,7 @@ test:
 	GITHUB_TOKEN=$$(cat ./github_pat) cargo watch -x test
 
 generate:
-	graphql-client generate -p crate::graphql::custom_scalars -o src/generated --schema-path graphql/schema.json graphql/github_stats.graphql
+	graphql-client generate -p crate::graphql::custom_scalars -o src/generated -I='Debug' -O='Serialize,Debug' --schema-path graphql/schema.json graphql/github_stats.graphql
 
 server:
 	npx http-server -c-1 --cors
