@@ -5,7 +5,7 @@ mod graphql;
 mod renderer;
 
 use chrono::{Duration, Utc};
-use log::debug;
+use log::{debug, info};
 use renderer::Renderer;
 
 #[derive(Debug)]
@@ -32,10 +32,17 @@ fn get_date_range() -> (String, String) {
 #[tokio::main]
 async fn main() -> Result<(), AppError> {
     env_logger::init();
-    debug!("HELLO!!");
+
     let date_range = get_date_range();
+    info!("date range: from={}, to={}", date_range.0, date_range.1);
+
     let github_stats = graphql::get_github_stats(date_range.0, date_range.1).await?;
-    let github_stats = graphql::normalize(github_stats);
+
+    let github_stats_string =
+        serde_json::to_string_pretty(&github_stats).map_err(|_| AppError::ConvertError)?;
+    debug!("graphql response: {}", github_stats_string);
+
+    let github_stats = graphql::normalize(github_stats.data);
 
     let github_stats_json =
         serde_json::to_string(&github_stats).map_err(|_| AppError::ConvertError)?;
