@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          ref: "v1.2.5"
+          ref: "v1.2.6"
       - name: Set up Rust
         uses: actions-rs/toolchain@v1
         with:
