@@ -72,7 +72,10 @@ fn get_client() -> Result<RequestBuilder, AppError> {
 ///
 /// Get repository statistics using the GitHub GraphQL API
 ///
-pub async fn get_github_stats(from: String, to: String) -> Result<GraphQLResponse<ResponseData>, AppError> {
+pub async fn get_github_stats(
+    from: String,
+    to: String,
+) -> Result<GraphQLResponse<ResponseData>, AppError> {
     let client = get_client()?;
     let query = GitHubStats::build_query(git_hub_stats::Variables { from, to });
 

@@ -1,16 +1,17 @@
 use crate::config;
 use chrono::Utc;
+use log::debug;
 use std::collections::HashMap;
-use svg::node::element::{Link, Path, Rectangle, Style, Text};
+use svg::node::element::{Definitions, LinearGradient, Link, Path, Rectangle, Stop, Style, Text};
 use svg::Document;
 
 use crate::graphql::RepositoryStat;
 
-const CSS: &'static str = r#" .top_lang_chart text {
-    font: 400 11px 'Segoe UI', Ubuntu, Sans-Serif;
+const CSS: &'static str = r#".chart text {
+    font: 400 9px 'Segoe UI', Ubuntu, Sans-Serif;
 }
 .title {
-    font: 600 18px 'Segoe UI', Ubuntu, Sans-Serif;
+    font: 600 11px 'Segoe UI', Ubuntu, Sans-Serif;
     fill: #2f80ed;
 }
 .star path {
@@ -31,29 +32,7 @@ const CSS: &'static str = r#" .top_lang_chart text {
 }"#;
 
 const STAR_ICON: &'static str = "M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.751.751 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Zm0 2.445L6.615 5.5a.75.75 0 0 1-.564.41l-3.097.45 2.24 2.184a.75.75 0 0 1 .216.664l-.528 3.084 2.769-1.456a.75.75 0 0 1 .698 0l2.77 1.456-.53-3.084a.75.75 0 0 1 .216-.664l2.24-2.183-3.096-.45a.75.75 0 0 1-.564-.41L8 2.694Z";
-
-fn create_star_icon(count: i64) -> Document {
-    let mut root = Document::new().set("class", "star");
-
-    let text = Text::new()
-        .set("x", 25)
-        .set("y", 13)
-        .set("width", 100)
-        .add(svg::node::Text::new(format!(
-            "Total Stars Earned: {}",
-            count
-        )));
-
-    let path = Path::new().set("d", STAR_ICON);
-    let star = Document::new()
-        .set("viewBox", "0 0 16 16")
-        .set("width", 16)
-        .set("height", 16)
-        .add(path);
-
-    root = root.add(text).add(star);
-    root
-}
+const CHART_WIDTH: i32 = 200;
 
 #[derive(Debug)]
 pub struct LanguageSummary {
@@ -68,6 +47,12 @@ pub struct LanguageSummaryValue {
     pub size: i64,
 }
 
+#[derive(Debug)]
+pub struct RepositorySummary {
+    pub total_commit_count: i64,
+    pub total_active_commit_count: i64,
+}
+
 impl LanguageSummary {
     pub fn new() -> Self {
         let data: HashMap<String, LanguageSummaryValue> = HashMap::new();
@@ -78,22 +63,37 @@ impl LanguageSummary {
     }
 }
 
+impl RepositorySummary {
+    pub fn new() -> Self {
+        Self {
+            total_commit_count: 0,
+            total_active_commit_count: 0,
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct Renderer {
     pub stats: Vec<RepositoryStat>,
     pub language_summary: LanguageSummary,
     pub language_colors: HashMap<String, String>,
+    pub repository_summary: RepositorySummary,
 }
 
 impl Renderer {
     pub fn new(stats: Vec<RepositoryStat>, language_colors: HashMap<String, String>) -> Self {
         let config = config::load();
         let mut language_summary = LanguageSummary::new();
+        let mut repository_summary = RepositorySummary::new();
         let map = &mut language_summary.data;
+        let stats: Vec<_> = stats
+            .into_iter()
+            .filter(|s| !config.ignore_repositories.contains(&s.name))
+            .collect();
         for s in &stats {
-            if config.ignore_repositories.contains(&s.name) {
-                continue;
-            }
+            debug!("{}, {}", s.name, s.period_commit_count);
+            repository_summary.total_commit_count += s.total_commit_count;
+            repository_summary.total_active_commit_count += s.period_commit_count;
             let ls = &s.languages;
             for l in ls {
                 if config.ignore_languages.contains(&l.name) {
@@ -125,76 +125,54 @@ impl Renderer {
                 (*entry).size += l.size;
             }
         }
+        debug!("repository_summary: {:?}", repository_summary);
         Self {
             stats,
             language_summary,
             language_colors,
+            repository_summary,
         }
     }
 
-    pub fn render(&self) -> Document {
+    pub fn render(&mut self) -> Document {
         let styles = Style::new(CSS);
-        let all_star_count = self
+        let star_count = self
             .stats
             .iter()
             .map(|item| item.stargazer_count)
             .sum::<i64>();
-        let star = create_star_icon(all_star_count).set("x", 20).set("y", 10);
-        let top_lang_charts = self.create_top_lang_charts();
+        let header_pane = create_header_pane(star_count, 20, 10);
+        let top_langs_chart = self.create_top_langs_chart(20, 30);
+        let top_commits_chart = self.create_top_commits_chart(240, 30);
+        let top_active_commits_chart = self.create_top_active_commits_chart(460, 30);
+        let footer_pane = create_footer_pane(20, 500);
 
-        let now = Utc::now();
-        let current_date = now.format("%Y-%m-%d").to_string();
-
-        let text_before = Text::new()
-            .set("x", 0)
-            .set("y", 20)
-            .add(svg::node::Text::new("Generated by"));
-
-        let link_text = Text::new()
-            .set("x", 80)
-            .set("y", 20)
-            .add(svg::node::Text::new("github-stats-generator"));
-
-        let link = Link::new()
-            .set("href", "https://github.com/kengo-k/github-stats-generator")
-            .add(link_text);
-
-        let text_after = Text::new()
-            .set("x", 210)
-            .set("y", 20)
-            .add(svg::node::Text::new(format!("at {}", current_date)));
-
-        let footer = Document::new()
-            .set("class", "footer")
-            .set("x", 20)
-            .set("y", 500)
-            .add(text_before)
-            .add(link)
-            .add(text_after);
+        let defs = Definitions::new()
+            .add(create_gradient("green-grad", "#66ff66", "#009900"))
+            .add(create_gradient("blue-grad", "#66ccff", "#0000ff"));
 
         let root = Document::new()
-            .set("width", 600)
+            .set("width", 660)
             .set("height", 540)
+            .set("viewBox", "0 0 660 540")
             .add(styles)
-            .add(star)
-            .add(top_lang_charts)
-            .add(footer);
+            .add(defs)
+            .add(header_pane)
+            .add(top_langs_chart)
+            .add(top_commits_chart)
+            .add(top_active_commits_chart)
+            .add(footer_pane);
 
         root
     }
 
-    fn create_top_lang_charts(&self) -> Document {
+    fn create_top_langs_chart(&self, x: i32, y: i32) -> Document {
         let config = config::load();
-        let values: Vec<_> = self.language_summary.data.values().collect();
-        let height = values.len() * 42;
         let mut root = Document::new();
         let mut top_lang_chart = Document::new()
             .set("x", 0)
             .set("y", 50)
-            .set("width", 300)
-            .set("height", height)
-            .set("viewBox", (0, 0, 300, height))
-            .set("class", "top_lang_chart");
+            .set("class", "chart");
         let mut values: Vec<_> = self.language_summary.data.values().collect();
         values.sort_by(|a, b| (*b).size.partial_cmp(&a.size).unwrap());
         values.truncate(config.languages_count);
@@ -222,36 +200,130 @@ impl Renderer {
             top_lang_chart = top_lang_chart.add(chart)
         }
 
-        let title = Text::new()
-            .set("x", 0)
-            .set("y", 30)
-            .set("class", "title")
-            .add(svg::node::Text::new("Most Used Languages"));
+        let title = create_chart_title("Top Languages", 0, 30);
+        root = root.set("x", x).set("y", y).add(title).add(top_lang_chart);
+        root
+    }
 
+    fn create_top_commits_chart(&self, x: i32, y: i32) -> Document {
+        let config = config::load();
+        let mut root = Document::new();
+        let mut most_commited_chart = Document::new()
+            .set("x", 0)
+            .set("y", 50)
+            .set("class", "chart");
+        let mut values = self.stats.clone();
+        values = values.into_iter().filter(|item| !item.is_private).collect();
+        values.sort_by(|a, b| {
+            (*b).total_commit_count
+                .partial_cmp(&a.total_commit_count)
+                .unwrap()
+        });
+        values.truncate(config.languages_count);
+        let charts: Vec<_> = values
+            .into_iter()
+            .enumerate()
+            .map(|(i, r)| {
+                let text = format!(
+                    "{}: {:.1}% ({})",
+                    r.name,
+                    r.total_commit_count as f64 / self.repository_summary.total_commit_count as f64
+                        * 100.0,
+                    r.total_commit_count
+                );
+                let doc = create_bar_chart(
+                    text.as_str(),
+                    r.total_commit_count as f64 / self.repository_summary.total_commit_count as f64
+                        * 100.0,
+                    "url(#blue-grad)",
+                );
+                doc.set("y", i * 40)
+            })
+            .collect::<Vec<_>>();
+
+        for chart in charts {
+            most_commited_chart = most_commited_chart.add(chart)
+        }
+
+        let title = create_chart_title("Top Commits", 0, 30);
         root = root
-            .set("x", 20)
-            .set("y", 30)
+            .set("x", x)
+            .set("y", y)
             .add(title)
-            .add(top_lang_chart);
+            .add(most_commited_chart);
+        root
+    }
+
+    fn create_top_active_commits_chart(&self, x: i32, y: i32) -> Document {
+        let config = config::load();
+        let mut root = Document::new();
+        let mut most_commited_chart = Document::new()
+            .set("x", 0)
+            .set("y", 50)
+            .set("class", "chart");
+        let mut values = self.stats.clone();
+        values = values
+            .into_iter()
+            .filter(|item| item.period_commit_count > 0 && !item.is_private)
+            .collect();
+        values.sort_by(|a, b| {
+            (*b).period_commit_count
+                .partial_cmp(&a.period_commit_count)
+                .unwrap()
+        });
+        values.truncate(config.languages_count);
+        let charts: Vec<_> = values
+            .into_iter()
+            .enumerate()
+            .map(|(i, r)| {
+                let text = format!(
+                    "{}: {:.1}% ({})",
+                    r.name,
+                    r.period_commit_count as f64
+                        / self.repository_summary.total_active_commit_count as f64
+                        * 100.0,
+                    r.period_commit_count
+                );
+                let doc = create_bar_chart(
+                    text.as_str(),
+                    r.period_commit_count as f64
+                        / self.repository_summary.total_active_commit_count as f64
+                        * 100.0,
+                    "url(#green-grad)",
+                );
+                doc.set("y", i * 40)
+            })
+            .collect::<Vec<_>>();
+
+        for chart in charts {
+            most_commited_chart = most_commited_chart.add(chart)
+        }
+
+        let title = create_chart_title("Top Active Commits", 0, 30);
+        root = root
+            .set("x", x)
+            .set("y", y)
+            .add(title)
+            .add(most_commited_chart);
         root
     }
 }
 
-pub fn create_bar_chart(lang_name: &str, ratio: f64, color: &str) -> Document {
+fn create_bar_chart(label: &str, value: f64, color: &str) -> Document {
     const BAR_TOP: f32 = 27.5;
     const BAR_HEIGHT: i32 = 8;
     const BAR_ROUND: i32 = 5;
-    let mut document = Document::new().set("width", 250);
+    let mut root = Document::new().set("width", CHART_WIDTH);
     let text = Text::new()
         .set("x", 0)
         .set("y", 20)
-        .add(svg::node::Text::new(format!("{}", lang_name)));
+        .add(svg::node::Text::new(format!("{}", label)));
     let whole_rect = Rectangle::new()
         .set("x", 0)
         .set("y", BAR_TOP)
         .set("rx", BAR_ROUND)
         .set("ry", BAR_ROUND)
-        .set("width", 205)
+        .set("width", CHART_WIDTH)
         .set("height", BAR_HEIGHT)
         .set("fill", "#ddd")
         .set("class", "whole");
@@ -260,14 +332,98 @@ pub fn create_bar_chart(lang_name: &str, ratio: f64, color: &str) -> Document {
         .set("y", BAR_TOP)
         .set("rx", BAR_ROUND)
         .set("ry", BAR_ROUND)
-        .set("width", format!("{}%", ratio))
+        .set("width", format!("{}%", value))
         .set("height", BAR_HEIGHT)
         .set("fill", color)
         .set("class", "ratio");
 
-    document = document.add(text).add(whole_rect).add(ratio_rect);
+    root = root.add(text).add(whole_rect).add(ratio_rect);
 
-    document
+    root
+}
+
+fn create_header_pane(count: i64, x: i32, y: i32) -> Document {
+    let mut root = Document::new().set("class", "star").set("x", x).set("y", y);
+
+    let text = Text::new()
+        .set("x", 25)
+        .set("y", 13)
+        .set("width", 100)
+        .add(svg::node::Text::new(format!(
+            "Total Stars Earned: {}",
+            count
+        )));
+
+    let path = Path::new().set("d", STAR_ICON);
+    let star = Document::new()
+        .set("viewBox", "0 0 16 16")
+        .set("width", 16)
+        .set("height", 16)
+        .add(path);
+
+    root = root.add(text).add(star);
+    root
+}
+
+fn create_footer_pane(x: i32, y: i32) -> Document {
+    let now = Utc::now();
+    let current_date = now.format("%Y-%m-%d").to_string();
+
+    let text_before = Text::new()
+        .set("x", 0)
+        .set("y", 20)
+        .add(svg::node::Text::new("Generated by"));
+
+    let link_text = Text::new()
+        .set("x", 80)
+        .set("y", 20)
+        .add(svg::node::Text::new("github-stats-generator"));
+
+    let link = Link::new()
+        .set("href", "https://github.com/kengo-k/github-stats-generator")
+        .add(link_text);
+
+    let text_after = Text::new()
+        .set("x", 210)
+        .set("y", 20)
+        .add(svg::node::Text::new(format!("at {}", current_date)));
+
+    let root = Document::new()
+        .set("class", "footer")
+        .set("x", x)
+        .set("y", y)
+        .add(text_before)
+        .add(link)
+        .add(text_after);
+
+    root
+}
+
+fn create_chart_title(title: &str, x: i32, y: i32) -> Text {
+    let title = Text::new()
+        .set("x", x)
+        .set("y", y)
+        .set("class", "title")
+        .add(svg::node::Text::new(title));
+    title
+}
+
+fn create_gradient(id: &str, from: &str, to: &str) -> LinearGradient {
+    let stop_from = Stop::new()
+        .set("offset", "0%")
+        .set("style", format!("stop-color: {}", from));
+    let stop_to = Stop::new()
+        .set("offset", "100%")
+        .set("style", format!("stop-color: {}", to));
+    let root = LinearGradient::new()
+        .set("id", id)
+        .set("x1", "0%")
+        .set("y1", "0%")
+        .set("x2", "100%")
+        .set("y2", "100%")
+        .add(stop_from)
+        .add(stop_to);
+    root
 }
 
 #[cfg(test)]
