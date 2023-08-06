@@ -51,6 +51,7 @@ pub struct LanguageSummaryValue {
 pub struct RepositorySummary {
     pub total_commit_count: i64,
     pub total_active_commit_count: i64,
+    pub star_count: i64,
 }
 
 impl LanguageSummary {
@@ -68,6 +69,7 @@ impl RepositorySummary {
         Self {
             total_commit_count: 0,
             total_active_commit_count: 0,
+            star_count: 0,
         }
     }
 }
@@ -86,6 +88,8 @@ impl Renderer {
         let mut language_summary = LanguageSummary::new();
         let mut repository_summary = RepositorySummary::new();
         let map = &mut language_summary.data;
+        let star_count = stats.iter().map(|item| item.stargazer_count).sum::<i64>();
+        repository_summary.star_count = star_count;
         let stats: Vec<_> = stats
             .into_iter()
             .filter(|s| !config.ignore_repositories.contains(&s.name))
@@ -136,12 +140,7 @@ impl Renderer {
 
     pub fn render(&mut self) -> Document {
         let styles = Style::new(CSS);
-        let star_count = self
-            .stats
-            .iter()
-            .map(|item| item.stargazer_count)
-            .sum::<i64>();
-        let header_pane = create_header_pane(star_count, 20, 10);
+        let header_pane = create_header_pane(self.repository_summary.star_count, 20, 10);
         let top_langs_chart = self.create_top_langs_chart(20, 30);
         let top_commits_chart = self.create_top_commits_chart(240, 30);
         let top_active_commits_chart = self.create_top_active_commits_chart(460, 30);
