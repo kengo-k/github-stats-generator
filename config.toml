@@ -1,5 +1,5 @@
 languages_count = 10
-ignore_repositories = ["kengo-k.github.io", "study-laravel"]
+ignore_repositories = ["kengo-k.github.io", "kengo-k"]
 ignore_languages = ["PHP", "Blade", "Batchfile", "Vue", "Dockerfile", "Makefile", "HTML", "Vim Script"]
 
 [language_mapping]
