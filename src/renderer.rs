@@ -169,7 +169,7 @@ impl Renderer {
     fn create_top_langs_chart(&self, x: i32, y: i32) -> Document {
         let config = config::load();
         let mut root = Document::new();
-        let mut top_lang_chart = Document::new()
+        let mut chart = Document::new()
             .set("x", 0)
             .set("y", 50)
             .set("class", "chart");
@@ -177,7 +177,7 @@ impl Renderer {
         values.sort_by(|a, b| (*b).size.partial_cmp(&a.size).unwrap());
         values.truncate(config.languages_count);
 
-        let charts: Vec<_> = values
+        let bars: Vec<_> = values
             .into_iter()
             .enumerate()
             .map(|(i, d)| {
@@ -196,19 +196,19 @@ impl Renderer {
             })
             .collect::<Vec<_>>();
 
-        for chart in charts {
-            top_lang_chart = top_lang_chart.add(chart)
+        for bar in bars {
+            chart = chart.add(bar)
         }
 
         let title = create_chart_title("Top Languages", 0, 30);
-        root = root.set("x", x).set("y", y).add(title).add(top_lang_chart);
+        root = root.set("x", x).set("y", y).add(title).add(chart);
         root
     }
 
     fn create_top_commits_chart(&self, x: i32, y: i32) -> Document {
         let config = config::load();
         let mut root = Document::new();
-        let mut most_commited_chart = Document::new()
+        let mut chart = Document::new()
             .set("x", 0)
             .set("y", 50)
             .set("class", "chart");
@@ -220,7 +220,7 @@ impl Renderer {
                 .unwrap()
         });
         values.truncate(config.languages_count);
-        let charts: Vec<_> = values
+        let bars: Vec<_> = values
             .into_iter()
             .enumerate()
             .map(|(i, r)| {
@@ -241,23 +241,19 @@ impl Renderer {
             })
             .collect::<Vec<_>>();
 
-        for chart in charts {
-            most_commited_chart = most_commited_chart.add(chart)
+        for bar in bars {
+            chart = chart.add(bar)
         }
 
         let title = create_chart_title("Top Commits", 0, 30);
-        root = root
-            .set("x", x)
-            .set("y", y)
-            .add(title)
-            .add(most_commited_chart);
+        root = root.set("x", x).set("y", y).add(title).add(chart);
         root
     }
 
     fn create_top_active_commits_chart(&self, x: i32, y: i32) -> Document {
         let config = config::load();
         let mut root = Document::new();
-        let mut most_commited_chart = Document::new()
+        let mut chart = Document::new()
             .set("x", 0)
             .set("y", 50)
             .set("class", "chart");
@@ -272,7 +268,7 @@ impl Renderer {
                 .unwrap()
         });
         values.truncate(config.languages_count);
-        let charts: Vec<_> = values
+        let bars: Vec<_> = values
             .into_iter()
             .enumerate()
             .map(|(i, r)| {
@@ -295,16 +291,12 @@ impl Renderer {
             })
             .collect::<Vec<_>>();
 
-        for chart in charts {
-            most_commited_chart = most_commited_chart.add(chart)
+        for bar in bars {
+            chart = chart.add(bar)
         }
 
-        let title = create_chart_title("Top Active Commits", 0, 30);
-        root = root
-            .set("x", x)
-            .set("y", y)
-            .add(title)
-            .add(most_commited_chart);
+        let title = create_chart_title("Top Active Commits(1week)", 0, 30);
+        root = root.set("x", x).set("y", y).add(title).add(chart);
         root
     }
 }
